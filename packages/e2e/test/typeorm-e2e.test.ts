@@ -180,6 +180,14 @@ describe('TypeORM E2E — NestJS + SQLite', () => {
     expect(res.body[1].name).toBe('Alice');
   });
 
+  it('filters with parenthesized OR within AND', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/users?filter=(status=active|status=pending);age>=28')
+      .expect(200);
+    // active with age>=28: Alice(30), Charlie(35). pending with age>=28: Diana(28).
+    expect(res.body).toHaveLength(3);
+  });
+
   it('returns 400 for unknown field', async () => {
     await request(app.getHttpServer()).get('/users?filter=unknown=value').expect(400);
   });

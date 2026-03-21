@@ -145,4 +145,49 @@ describe('FilterCstVisitor', () => {
       expect(result).toHaveProperty('field', 'a');
     });
   });
+
+  describe('parenthesized expressions', () => {
+    it('parses (a=1|b=2);c=3 as AND(OR(a,b), c)', () => {
+      const result = visit('(a=1|b=2);c=3') as FilterGroup;
+      expect(result.type).toBe('AND');
+      expect(result.conditions).toHaveLength(2);
+
+      const orGroup = result.conditions[0] as FilterGroup;
+      expect(orGroup.type).toBe('OR');
+      expect(orGroup.conditions).toHaveLength(2);
+      expect((orGroup.conditions[0] as FilterCondition).field).toBe('a');
+      expect((orGroup.conditions[1] as FilterCondition).field).toBe('b');
+
+      expect((result.conditions[1] as FilterCondition).field).toBe('c');
+    });
+
+    it('parses a=1|(b=2;c=3) as OR(a, AND(b,c))', () => {
+      const result = visit('a=1|(b=2;c=3)') as FilterGroup;
+      expect(result.type).toBe('OR');
+      expect(result.conditions).toHaveLength(2);
+      expect((result.conditions[0] as FilterCondition).field).toBe('a');
+
+      const andGroup = result.conditions[1] as FilterGroup;
+      expect(andGroup.type).toBe('AND');
+      expect(andGroup.conditions).toHaveLength(2);
+    });
+
+    it('parses nested ((a=1)) as single condition', () => {
+      const result = visit('((a=1))') as FilterCondition;
+      expect(result.field).toBe('a');
+    });
+
+    it('parses (a=1;b=2)|(c=3;d=4) as OR of two ANDs', () => {
+      const result = visit('(a=1;b=2)|(c=3;d=4)') as FilterGroup;
+      expect(result.type).toBe('OR');
+      expect(result.conditions).toHaveLength(2);
+      expect((result.conditions[0] as FilterGroup).type).toBe('AND');
+      expect((result.conditions[1] as FilterGroup).type).toBe('AND');
+    });
+
+    it('parses single parenthesized condition (a=1) as simple condition', () => {
+      const result = visit('(a=1)') as FilterCondition;
+      expect(result.field).toBe('a');
+    });
+  });
 });

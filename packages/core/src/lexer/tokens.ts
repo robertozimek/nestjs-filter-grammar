@@ -23,6 +23,8 @@ export const Equals       = createToken({ name: 'Equals',       pattern: /=/ });
 export const Semicolon = createToken({ name: 'Semicolon', pattern: /;/ });
 export const Pipe      = createToken({ name: 'Pipe',      pattern: /\|/ });
 export const Comma     = createToken({ name: 'Comma',     pattern: /,/ });
+export const LParen    = createToken({ name: 'LParen',    pattern: /\(/ });
+export const RParen    = createToken({ name: 'RParen',    pattern: /\)/ });
 
 // --- Literals ---
 
@@ -36,7 +38,7 @@ export const StringLiteral = createToken({
 
 export const Token = createToken({
   name: 'Token',
-  pattern: /[^,"|;!=><^$*~\s]+/,
+  pattern: /[^,"|;!=><^$*~()\s]+/,
 });
 
 // --- Null keyword (must come before Token in allTokens array) ---
@@ -66,7 +68,7 @@ export const allTokens = [
   StartsWith, EndsWith, Contains,
   GreaterThan, LessThan, IEquals, Equals,
   // Structural
-  Semicolon, Pipe, Comma,
+  Semicolon, Pipe, Comma, LParen, RParen,
   // Literals
   StringLiteral,
   NullLiteral,

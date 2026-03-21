@@ -12,9 +12,15 @@ interface OrExpressionCstChildren {
   andExpression: CstNode[];
 }
 
-/** CST node for `andExpression → condition (Semicolon condition)*` */
+/** CST node for `andExpression → atom (Semicolon atom)*` */
 interface AndExpressionCstChildren {
-  condition: CstNode[];
+  atom: CstNode[];
+}
+
+/** CST node for `atom → "(" orExpression ")" | condition` */
+interface AtomCstChildren {
+  orExpression?: CstNode[];
+  condition?: CstNode[];
 }
 
 /** CST node for `condition → Token operator values` */
@@ -89,10 +95,17 @@ export function buildFilterVisitor(parser: FilterParser) {
     }
 
     andExpression(ctx: AndExpressionCstChildren): FilterTree {
-      const conditions: FilterTree[] = ctx.condition.map((node: CstNode) =>
+      const conditions: FilterTree[] = ctx.atom.map((node: CstNode) =>
         this.visit(node),
       );
       return simplify('AND', conditions);
+    }
+
+    atom(ctx: AtomCstChildren): FilterTree {
+      if (ctx.orExpression) {
+        return this.visit(ctx.orExpression[0]);
+      }
+      return this.visit(ctx.condition![0]);
     }
 
     condition(ctx: ConditionCstChildren): FilterCondition {

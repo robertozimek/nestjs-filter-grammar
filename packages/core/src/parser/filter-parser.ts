@@ -21,6 +21,8 @@ import {
   IStartsWith,
   IEndsWith,
   IContains,
+  LParen,
+  RParen,
 } from '../lexer/tokens';
 
 export class FilterParser extends CstParser {
@@ -38,11 +40,28 @@ export class FilterParser extends CstParser {
   });
 
   private andExpression = this.RULE('andExpression', () => {
-    this.SUBRULE(this.condition, { LABEL: 'condition' });
+    this.SUBRULE(this.atom, { LABEL: 'atom' });
     this.MANY(() => {
       this.CONSUME(Semicolon);
-      this.SUBRULE2(this.condition, { LABEL: 'condition' });
+      this.SUBRULE2(this.atom, { LABEL: 'atom' });
     });
+  });
+
+  private atom = this.RULE('atom', () => {
+    this.OR([
+      {
+        ALT: () => {
+          this.CONSUME(LParen);
+          this.SUBRULE(this.orExpression, { LABEL: 'orExpression' });
+          this.CONSUME(RParen);
+        },
+      },
+      {
+        ALT: () => {
+          this.SUBRULE(this.condition, { LABEL: 'condition' });
+        },
+      },
+    ]);
   });
 
   private condition = this.RULE('condition', () => {
