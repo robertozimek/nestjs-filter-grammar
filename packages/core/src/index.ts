@@ -7,6 +7,7 @@ export {
   FilterCondition,
   FilterValue,
   FilterValueType,
+  FilterEnum,
   FilterResult,
   FilterError,
   FilterAdapter,

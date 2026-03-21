@@ -160,4 +160,114 @@ describe('coerceFilterValues', () => {
     expect(errors).toHaveLength(0);
     expect((result as FilterCondition).values[0]).toEqual({ type: 'string', value: '123', quoted: true });
   });
+
+  describe('enum validation', () => {
+    enum Status {
+      active = 'active',
+      inactive = 'inactive',
+      pending = 'pending',
+    }
+
+    enum Priority {
+      low = 0,
+      medium = 1,
+      high = 2,
+    }
+
+    const enumMetadata: ColumnMetadata[] = [
+      { propertyKey: 'status', operators: [FilterOperator.eq], valueType: Status },
+      { propertyKey: 'priority', operators: [FilterOperator.eq], valueType: Priority },
+      { propertyKey: 'color', operators: [FilterOperator.eq], valueType: ['red', 'green', 'blue'] },
+    ];
+
+    it('accepts valid string enum value', () => {
+      const tree: FilterCondition = {
+        field: 'status', operator: FilterOperator.eq,
+        values: [{ type: 'string', value: 'active' }],
+        fieldOffset: 0, operatorOffset: 6,
+      };
+      const { errors } = coerceFilterValues(tree, enumMetadata);
+      expect(errors).toHaveLength(0);
+    });
+
+    it('rejects invalid string enum value', () => {
+      const tree: FilterCondition = {
+        field: 'status', operator: FilterOperator.eq,
+        values: [{ type: 'string', value: 'deleted' }],
+        fieldOffset: 0, operatorOffset: 6,
+      };
+      const { errors } = coerceFilterValues(tree, enumMetadata);
+      expect(errors).toHaveLength(1);
+      expect(errors[0].message).toContain('deleted');
+      expect(errors[0].message).toContain('active');
+    });
+
+    it('accepts valid numeric enum value and coerces to number', () => {
+      const tree: FilterCondition = {
+        field: 'priority', operator: FilterOperator.eq,
+        values: [{ type: 'string', value: '1' }],
+        fieldOffset: 0, operatorOffset: 8,
+      };
+      const { tree: result, errors } = coerceFilterValues(tree, enumMetadata);
+      expect(errors).toHaveLength(0);
+      expect((result as FilterCondition).values[0]).toEqual({ type: 'number', value: 1 });
+    });
+
+    it('rejects invalid numeric enum value', () => {
+      const tree: FilterCondition = {
+        field: 'priority', operator: FilterOperator.eq,
+        values: [{ type: 'string', value: '99' }],
+        fieldOffset: 0, operatorOffset: 8,
+      };
+      const { errors } = coerceFilterValues(tree, enumMetadata);
+      expect(errors).toHaveLength(1);
+      expect(errors[0].message).toContain('99');
+    });
+
+    it('accepts valid string array enum value', () => {
+      const tree: FilterCondition = {
+        field: 'color', operator: FilterOperator.eq,
+        values: [{ type: 'string', value: 'red' }],
+        fieldOffset: 0, operatorOffset: 5,
+      };
+      const { errors } = coerceFilterValues(tree, enumMetadata);
+      expect(errors).toHaveLength(0);
+    });
+
+    it('rejects invalid string array enum value', () => {
+      const tree: FilterCondition = {
+        field: 'color', operator: FilterOperator.eq,
+        values: [{ type: 'string', value: 'purple' }],
+        fieldOffset: 0, operatorOffset: 5,
+      };
+      const { errors } = coerceFilterValues(tree, enumMetadata);
+      expect(errors).toHaveLength(1);
+      expect(errors[0].message).toContain('purple');
+      expect(errors[0].message).toContain('red');
+    });
+
+    it('validates multi-value enum', () => {
+      const tree: FilterCondition = {
+        field: 'status', operator: FilterOperator.eq,
+        values: [
+          { type: 'string', value: 'active' },
+          { type: 'string', value: 'deleted' },
+        ],
+        fieldOffset: 0, operatorOffset: 6,
+      };
+      const { errors } = coerceFilterValues(tree, enumMetadata);
+      expect(errors).toHaveLength(1);
+      expect(errors[0].message).toContain('deleted');
+    });
+
+    it('preserves null values with enum type', () => {
+      const tree: FilterCondition = {
+        field: 'status', operator: FilterOperator.eq,
+        values: [{ type: 'null' }],
+        fieldOffset: 0, operatorOffset: 6,
+      };
+      const { errors } = coerceFilterValues(tree, enumMetadata);
+      expect(errors).toHaveLength(0);
+    });
+  });
 });

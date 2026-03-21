@@ -57,7 +57,8 @@ export interface FilterCondition {
   operatorOffset: number;
 }
 
-export type FilterValueType = 'string' | 'number' | 'boolean';
+export type FilterEnum = (string | number)[] | Record<string, string | number>;
+export type FilterValueType = 'string' | 'number' | 'boolean' | FilterEnum;
 
 export type FilterValue =
   | { type: 'null' }
