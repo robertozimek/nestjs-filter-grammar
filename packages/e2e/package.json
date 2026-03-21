@@ -4,6 +4,8 @@
   "private": true,
   "description": "End-to-end integration tests for all nestjs-filter-grammar adapters",
   "scripts": {
+    "prisma:setup": "DATABASE_URL=file:./test.db prisma generate --schema=prisma/schema.prisma && DATABASE_URL=file:./test.db PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=yes prisma db push --schema=prisma/schema.prisma --force-reset --skip-generate",
+    "pretest": "pnpm prisma:setup",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -12,6 +14,8 @@
     "@nestjs-filter-grammar/typeorm": "workspace:*",
     "@nestjs-filter-grammar/prisma": "workspace:*",
     "@nestjs-filter-grammar/mikroorm": "workspace:*",
+    "prisma": "^6.0.0",
+    "@prisma/client": "^6.0.0",
     "reflect-metadata": "^0.2.2",
     "typeorm": "^0.3.0",
     "sql.js": "^1.11.0",
