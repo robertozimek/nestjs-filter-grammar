@@ -1,6 +1,6 @@
 import 'reflect-metadata';
-import { FILTERABLE_KEY, FILTERABLE_COLUMNS_KEY } from './constants';
-import { ColumnMetadata } from '../types';
+import { FILTERABLE_KEY, FILTERABLE_COLUMNS_KEY, SORTABLE_COLUMNS_KEY } from './constants';
+import { ColumnMetadata, SortableColumnMetadata } from '../types';
 
 export function isFilterable(target: Function): boolean {
   return Reflect.getOwnMetadata(FILTERABLE_KEY, target) === true;
@@ -26,5 +26,23 @@ export function getFilterableMetadata(target: Function): ColumnMetadata[] {
     current = Object.getPrototypeOf(current);
   }
 
+  return result;
+}
+
+export function getSortableMetadata(target: Function): SortableColumnMetadata[] {
+  const result: SortableColumnMetadata[] = [];
+  const seen = new Set<string>();
+  let current: Function | null = target;
+  while (current && current !== Function.prototype) {
+    const columns: SortableColumnMetadata[] =
+      Reflect.getOwnMetadata(SORTABLE_COLUMNS_KEY, current) ?? [];
+    for (const col of columns) {
+      if (!seen.has(col.propertyKey)) {
+        seen.add(col.propertyKey);
+        result.push(col);
+      }
+    }
+    current = Object.getPrototypeOf(current);
+  }
   return result;
 }
