@@ -57,9 +57,13 @@ export interface FilterCondition {
   operatorOffset: number;
 }
 
+export type FilterValueType = 'string' | 'number' | 'boolean';
+
 export type FilterValue =
   | { type: 'null' }
-  | { type: 'string'; value: string };
+  | { type: 'string'; value: string; quoted?: boolean }
+  | { type: 'number'; value: number }
+  | { type: 'boolean'; value: boolean };
 
 export interface FilterResult<T = Record<string, never>> {
   filter?: FilterTree;
@@ -83,4 +87,6 @@ export interface FilterAdapter<TResult, TColumnMap = unknown> {
 export interface ColumnMetadata {
   propertyKey: string;
   operators: FilterOperator[];
+  /** The expected value type for this column. Defaults to 'string'. */
+  valueType: FilterValueType;
 }

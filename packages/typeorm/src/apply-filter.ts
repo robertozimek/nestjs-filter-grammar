@@ -89,10 +89,12 @@ function applyCondition(
   const { values, operator } = condition;
   const opSql = getOperatorSql(operator);
 
-  const nullValues = values.filter((v) => v.type === 'null');
-  const stringValues = values.filter((v): v is { type: 'string'; value: string } => v.type === 'string');
+  type ScalarFilterValue = { type: 'string'; value: string } | { type: 'number'; value: number } | { type: 'boolean'; value: boolean };
 
-  if (stringValues.length === 0 && nullValues.length > 0) {
+  const nullValues = values.filter((v) => v.type === 'null');
+  const scalarValues = values.filter((v): v is ScalarFilterValue => v.type !== 'null');
+
+  if (scalarValues.length === 0 && nullValues.length > 0) {
     const nullExpr = isNegationOperator(operator)
       ? `${column} IS NOT NULL`
       : `${column} IS NULL`;
@@ -100,9 +102,9 @@ function applyCondition(
     return;
   }
 
-  if (stringValues.length > 1) {
+  if (scalarValues.length > 1) {
     const paramName = uniqueParam(condition.field, counter);
-    const vals = stringValues.map((v) => v.value);
+    const vals = scalarValues.map((v) => v.value);
 
     if (nullValues.length > 0) {
       qb[method](new Brackets((sub: WhereExpressionBuilder) => {
@@ -116,11 +118,11 @@ function applyCondition(
     return;
   }
 
-  const rawValue = stringValues[0].value;
+  const rawValue = scalarValues[0].value;
   const paramName = uniqueParam(condition.field, counter);
 
-  let paramValue = rawValue;
-  if (opSql.like) {
+  let paramValue: string | number | boolean = rawValue;
+  if (opSql.like && typeof rawValue === 'string') {
     paramValue = wrapLikeValue(rawValue, opSql.like);
   }
 

@@ -124,7 +124,7 @@ export function buildFilterVisitor(parser: FilterParser) {
       }
       if (ctx.StringLiteral) {
         const raw: string = ctx.StringLiteral[0].image;
-        return { type: 'string', value: unescapeString(raw) };
+        return { type: 'string', value: unescapeString(raw), quoted: true };
       }
       // Token (generic unquoted value)
       return { type: 'string', value: ctx.Token![0].image };

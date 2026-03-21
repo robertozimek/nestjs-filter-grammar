@@ -1,30 +1,14 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { PrismaClient } from '@prisma/client';
-import { parseFilter, parseSortString, FilterOperator } from '@nestjs-filter-grammar/core';
-import { applyFilter, applySort, ApplyFilterOptions } from '@nestjs-filter-grammar/prisma';
+import { parseFilter, parseSortString, coerceFilterValues, FilterOperator, ColumnMetadata } from '@nestjs-filter-grammar/core';
+import { applyFilter, applySort } from '@nestjs-filter-grammar/prisma';
 
-/**
- * The filter grammar always produces string values. Prisma requires
- * typed values (Int for integer fields). This column map coerces
- * numeric fields to numbers — which is what real users would do.
- */
-const filterOptions: ApplyFilterOptions = {
-  columnMap: {
-    age: (operator, values) => {
-      const opMap: Record<string, string> = {
-        [FilterOperator.eq]: 'equals',
-        [FilterOperator.neq]: 'not',
-        [FilterOperator.gt]: 'gt',
-        [FilterOperator.lt]: 'lt',
-        [FilterOperator.gte]: 'gte',
-        [FilterOperator.lte]: 'lte',
-      };
-      const prismaOp = opMap[operator] ?? 'equals';
-      const value = values[0].type === 'string' ? Number(values[0].value) : null;
-      return { age: { [prismaOp]: value } };
-    },
-  },
-};
+const columnMetadata: ColumnMetadata[] = [
+  { propertyKey: 'name', operators: [FilterOperator.eq, FilterOperator.iContains, FilterOperator.startsWith], valueType: 'string' },
+  { propertyKey: 'status', operators: [FilterOperator.eq, FilterOperator.neq], valueType: 'string' },
+  { propertyKey: 'age', operators: [FilterOperator.eq, FilterOperator.gte, FilterOperator.lte, FilterOperator.gt, FilterOperator.lt], valueType: 'number' },
+  { propertyKey: 'email', operators: [FilterOperator.eq], valueType: 'string' },
+];
 
 describe('Prisma E2E — SQLite', () => {
   let prisma: PrismaClient;
@@ -51,8 +35,14 @@ describe('Prisma E2E — SQLite', () => {
   });
 
   async function query(filter?: string, sort?: string) {
+    let filterTree;
+    if (filter) {
+      const parsed = parseFilter(filter);
+      const { tree } = coerceFilterValues(parsed, columnMetadata);
+      filterTree = tree;
+    }
     return prisma.user.findMany({
-      where: filter ? applyFilter(parseFilter(filter), filterOptions) : undefined,
+      where: filterTree ? applyFilter(filterTree) : undefined,
       orderBy: sort ? applySort(parseSortString(sort)) : undefined,
     });
   }
@@ -129,7 +119,6 @@ describe('Prisma E2E — SQLite', () => {
 
   it('sorts by multiple fields', async () => {
     const users = await query(undefined, '+status,-age');
-    // active: Charlie(35), Alice(30), then inactive: Bob(25), pending: Diana(28)
     expect(users[0].name).toBe('Charlie');
     expect(users[1].name).toBe('Alice');
   });

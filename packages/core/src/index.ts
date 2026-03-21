@@ -6,6 +6,7 @@ export {
   FilterGroup,
   FilterCondition,
   FilterValue,
+  FilterValueType,
   FilterResult,
   FilterError,
   FilterAdapter,
@@ -23,7 +24,7 @@ export { validateFilter } from './validate';
 
 // Decorators
 export { Filterable } from './decorators/filterable.decorator';
-export { FilterableColumn } from './decorators/filterable-column.decorator';
+export { FilterableColumn, FilterableColumnOptions } from './decorators/filterable-column.decorator';
 export { getFilterableMetadata, getSortableMetadata, isFilterable } from './decorators/metadata';
 
 // Parameter decorator
@@ -31,6 +32,9 @@ export { Filter, FilterOptions } from './param/filter.decorator';
 
 // Errors
 export { FilterParseException } from './errors/filter-parse-exception';
+
+// Coercion
+export { coerceFilterValues } from './coerce';
 
 // Swagger
 export { buildSwaggerDescription } from './swagger/swagger.util';

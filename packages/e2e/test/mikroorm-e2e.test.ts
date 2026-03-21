@@ -2,8 +2,15 @@ import 'reflect-metadata';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { MikroORM, Entity as MikroEntity, PrimaryKey, Property } from '@mikro-orm/core';
 import { defineConfig } from '@mikro-orm/better-sqlite';
-import { parseFilter, parseSortString } from '@nestjs-filter-grammar/core';
+import { parseFilter, parseSortString, coerceFilterValues, FilterOperator, ColumnMetadata } from '@nestjs-filter-grammar/core';
 import { applyFilter, applySort } from '@nestjs-filter-grammar/mikroorm';
+
+const columnMetadata: ColumnMetadata[] = [
+  { propertyKey: 'name', operators: [FilterOperator.eq, FilterOperator.iContains, FilterOperator.startsWith], valueType: 'string' },
+  { propertyKey: 'status', operators: [FilterOperator.eq, FilterOperator.neq], valueType: 'string' },
+  { propertyKey: 'age', operators: [FilterOperator.eq, FilterOperator.gte, FilterOperator.lte, FilterOperator.gt, FilterOperator.lt], valueType: 'number' },
+  { propertyKey: 'email', operators: [FilterOperator.eq], valueType: 'string' },
+];
 
 // --- Entity ---
 
@@ -52,7 +59,12 @@ describe('MikroORM E2E — SQLite', () => {
 
   async function query(filter?: string, sort?: string) {
     const em = orm.em.fork();
-    const filterTree = filter ? parseFilter(filter) : undefined;
+    let filterTree;
+    if (filter) {
+      const parsed = parseFilter(filter);
+      const { tree } = coerceFilterValues(parsed, columnMetadata);
+      filterTree = tree;
+    }
     const sortEntries = sort ? parseSortString(sort) : undefined;
     return em.find(User,
       filterTree ? applyFilter(filterTree) : {},

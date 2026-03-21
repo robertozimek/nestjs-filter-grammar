@@ -77,21 +77,21 @@ describe('FilterCstVisitor', () => {
     it('parses string literals and strips quotes', () => {
       const result = visit('name="John Doe"') as FilterCondition;
       expect(result.values).toEqual([
-        { type: 'string', value: 'John Doe' },
+        { type: 'string', value: 'John Doe', quoted: true },
       ]);
     });
 
     it('unescapes quotes in string literals', () => {
       const result = visit('name="say \\"hi\\""') as FilterCondition;
       expect(result.values).toEqual([
-        { type: 'string', value: 'say "hi"' },
+        { type: 'string', value: 'say "hi"', quoted: true },
       ]);
     });
 
     it('unescapes backslashes in string literals', () => {
       const result = visit('path="C:\\\\Users"') as FilterCondition;
       expect(result.values).toEqual([
-        { type: 'string', value: 'C:\\Users' },
+        { type: 'string', value: 'C:\\Users', quoted: true },
       ]);
     });
   });

@@ -1,6 +1,7 @@
 import { createParamDecorator, ExecutionContext, BadRequestException } from '@nestjs/common';
 import { parseFilter } from '../parse';
 import { validateFilter } from '../validate';
+import { coerceFilterValues } from '../coerce';
 import { getFilterableMetadata, getSortableMetadata, isFilterable } from '../decorators/metadata';
 import { FilterParseException } from '../errors/filter-parse-exception';
 import { FilterResult, FilterTree, ColumnMetadata, SortableColumnMetadata } from '../types';
@@ -76,7 +77,12 @@ function createFilterDecorator(queryClass: Function, options: FilterOptions = {}
         if (filterErrors.length > 0) {
           throw new FilterParseException(filterErrors);
         }
-        filter = tree;
+        // Coerce values to declared types
+        const { tree: coerced, errors: coerceErrors } = coerceFilterValues(tree, metadata);
+        if (coerceErrors.length > 0) {
+          throw new FilterParseException(coerceErrors);
+        }
+        filter = coerced;
       }
 
       // Handle sort — only if the query class has @SortableColumn decorators

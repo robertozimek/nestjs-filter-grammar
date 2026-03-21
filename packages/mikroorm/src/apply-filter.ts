@@ -52,17 +52,19 @@ function buildCondition(
   const { values, operator } = condition;
   const opMapping = getMikroOrmOperator(operator);
 
+  type ScalarFilterValue = { type: 'string'; value: string } | { type: 'number'; value: number } | { type: 'boolean'; value: boolean };
+
   const nullValues = values.filter((v) => v.type === 'null');
-  const stringValues = values.filter((v): v is { type: 'string'; value: string } => v.type === 'string');
+  const scalarValues = values.filter((v): v is ScalarFilterValue => v.type !== 'null');
 
   // All null
-  if (stringValues.length === 0 && nullValues.length > 0) {
+  if (scalarValues.length === 0 && nullValues.length > 0) {
     return { [column]: { [opMapping.key]: null } };
   }
 
   // Multi-value: $in / $nin
-  if (stringValues.length > 1) {
-    const vals = stringValues.map((v) => v.value);
+  if (scalarValues.length > 1) {
+    const vals = scalarValues.map((v) => v.value);
     const inKey = opMapping.key === '$ne' ? '$nin' : '$in';
 
     if (nullValues.length > 0) {
@@ -77,10 +79,10 @@ function buildCondition(
   }
 
   // Single value
-  const rawValue = stringValues.length > 0 ? stringValues[0].value : null;
-  let paramValue: string | null = rawValue;
+  const rawValue = scalarValues.length > 0 ? scalarValues[0].value : null;
+  let paramValue: string | number | boolean | null = rawValue;
 
-  if (opMapping.like && rawValue !== null) {
+  if (opMapping.like && typeof rawValue === 'string') {
     paramValue = wrapLikeValue(rawValue, opMapping.like);
   }
 

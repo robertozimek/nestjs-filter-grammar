@@ -51,11 +51,13 @@ function buildCondition(
   const { values, operator } = condition;
   const opMapping = getPrismaOperator(operator);
 
+  type ScalarFilterValue = { type: 'string'; value: string } | { type: 'number'; value: number } | { type: 'boolean'; value: boolean };
+
   const nullValues = values.filter((v) => v.type === 'null');
-  const stringValues = values.filter((v): v is { type: 'string'; value: string } => v.type === 'string');
+  const scalarValues = values.filter((v): v is ScalarFilterValue => v.type !== 'null');
 
   // All null
-  if (stringValues.length === 0 && nullValues.length > 0) {
+  if (scalarValues.length === 0 && nullValues.length > 0) {
     if (opMapping.negate) {
       return { [column]: { not: { equals: null } } };
     }
@@ -63,8 +65,8 @@ function buildCondition(
   }
 
   // Multi-value: IN / NOT IN
-  if (stringValues.length > 1) {
-    const vals = stringValues.map((v) => v.value);
+  if (scalarValues.length > 1) {
+    const vals = scalarValues.map((v) => v.value);
     const inKey = opMapping.negate ? 'notIn' : 'in';
 
     if (nullValues.length > 0) {
@@ -79,7 +81,7 @@ function buildCondition(
   }
 
   // Single value
-  const rawValue = stringValues.length > 0 ? stringValues[0].value : null;
+  const rawValue = scalarValues.length > 0 ? scalarValues[0].value : null;
   let fieldExpr: Record<string, PrismaQueryValue> = { [opMapping.key]: rawValue };
 
   if (opMapping.insensitive) {

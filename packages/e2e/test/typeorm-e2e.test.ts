@@ -1,8 +1,15 @@
 import 'reflect-metadata';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { DataSource, Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
-import { parseFilter, parseSortString } from '@nestjs-filter-grammar/core';
+import { parseFilter, parseSortString, coerceFilterValues, FilterOperator, ColumnMetadata } from '@nestjs-filter-grammar/core';
 import { applyFilter, applySort } from '@nestjs-filter-grammar/typeorm';
+
+const columnMetadata: ColumnMetadata[] = [
+  { propertyKey: 'name', operators: [FilterOperator.eq, FilterOperator.iContains, FilterOperator.startsWith], valueType: 'string' },
+  { propertyKey: 'status', operators: [FilterOperator.eq, FilterOperator.neq], valueType: 'string' },
+  { propertyKey: 'age', operators: [FilterOperator.eq, FilterOperator.gte, FilterOperator.lte, FilterOperator.gt, FilterOperator.lt], valueType: 'number' },
+  { propertyKey: 'email', operators: [FilterOperator.eq], valueType: 'string' },
+];
 
 // --- Entity ---
 
@@ -52,7 +59,11 @@ describe('TypeORM E2E — SQLite', () => {
 
   async function query(filter?: string, sort?: string) {
     const qb = ds.getRepository(User).createQueryBuilder('entity');
-    if (filter) applyFilter(qb, parseFilter(filter));
+    if (filter) {
+      const parsed = parseFilter(filter);
+      const { tree } = coerceFilterValues(parsed, columnMetadata);
+      applyFilter(qb, tree);
+    }
     if (sort) applySort(qb, parseSortString(sort));
     return qb.getMany();
   }

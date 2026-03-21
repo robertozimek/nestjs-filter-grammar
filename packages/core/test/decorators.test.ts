@@ -36,6 +36,7 @@ describe('Decorators', () => {
       expect(metadata[0]).toEqual({
         propertyKey: 'status',
         operators: [FilterOperator.eq, FilterOperator.neq],
+        valueType: 'string',
       });
     });
 
