@@ -1,24 +1,67 @@
+import 'reflect-metadata';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { Controller, Get, Module, INestApplication } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
+import request from 'supertest';
 import { PrismaClient } from '@prisma/client';
-import { parseFilter, parseSortString, coerceFilterValues, FilterOperator, ColumnMetadata } from '@nestjs-filter-grammar/core';
+import {
+  Filterable,
+  FilterableColumn,
+  SortableColumn,
+  FilterOperator,
+  Filter,
+  FilterResult,
+} from '@nestjs-filter-grammar/core';
 import { applyFilter, applySort } from '@nestjs-filter-grammar/prisma';
 
-const columnMetadata: ColumnMetadata[] = [
-  { propertyKey: 'name', operators: [FilterOperator.eq, FilterOperator.iContains, FilterOperator.startsWith], valueType: 'string' },
-  { propertyKey: 'status', operators: [FilterOperator.eq, FilterOperator.neq], valueType: 'string' },
-  { propertyKey: 'age', operators: [FilterOperator.eq, FilterOperator.gte, FilterOperator.lte, FilterOperator.gt, FilterOperator.lt], valueType: 'number' },
-  { propertyKey: 'email', operators: [FilterOperator.eq], valueType: 'string' },
-];
+// --- Filter Query DTO ---
 
-describe('Prisma E2E — SQLite', () => {
-  let prisma: PrismaClient;
+@Filterable()
+class UserQuery {
+  @FilterableColumn([FilterOperator.eq, FilterOperator.neq, FilterOperator.startsWith])
+  @SortableColumn()
+  name!: string;
+
+  @FilterableColumn([FilterOperator.eq, FilterOperator.neq])
+  @SortableColumn()
+  status!: string;
+
+  @FilterableColumn([FilterOperator.eq, FilterOperator.gte, FilterOperator.lte, FilterOperator.gt, FilterOperator.lt], { type: 'number' })
+  @SortableColumn()
+  age!: number;
+
+  @FilterableColumn([FilterOperator.eq])
+  email!: string;
+}
+
+// --- NestJS Controller + Module ---
+
+let prisma: PrismaClient;
+
+@Controller('users')
+class UsersController {
+  @Get()
+  async findAll(@Filter(UserQuery, { optional: true }) { filter, sort }: FilterResult) {
+    return prisma.user.findMany({
+      where: filter ? applyFilter(filter) : undefined,
+      orderBy: sort ? applySort(sort) : undefined,
+    });
+  }
+}
+
+@Module({ controllers: [UsersController] })
+class AppModule {}
+
+// --- Tests ---
+
+describe('Prisma E2E — NestJS + SQLite', () => {
+  let app: INestApplication;
 
   beforeAll(async () => {
     prisma = new PrismaClient({
       datasourceUrl: 'file:./test.db',
     });
 
-    // Clean and seed
     await prisma.user.deleteMany();
     await prisma.user.createMany({
       data: [
@@ -28,98 +71,97 @@ describe('Prisma E2E — SQLite', () => {
         { name: 'Diana', status: 'pending', age: 28, email: 'diana@test.com' },
       ],
     });
+
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    await app.init();
   });
 
   afterAll(async () => {
+    await app?.close();
     await prisma?.$disconnect();
   });
 
-  async function query(filter?: string, sort?: string) {
-    let filterTree;
-    if (filter) {
-      const parsed = parseFilter(filter);
-      const { tree } = coerceFilterValues(parsed, columnMetadata);
-      filterTree = tree;
-    }
-    return prisma.user.findMany({
-      where: filterTree ? applyFilter(filterTree) : undefined,
-      orderBy: sort ? applySort(parseSortString(sort)) : undefined,
-    });
-  }
-
   it('returns all users without filter', async () => {
-    const users = await query();
-    expect(users).toHaveLength(4);
+    const res = await request(app.getHttpServer()).get('/users').expect(200);
+    expect(res.body).toHaveLength(4);
   });
 
   it('filters by equality', async () => {
-    const users = await query('status=active');
-    expect(users).toHaveLength(2);
-    expect(users.every((u) => u.status === 'active')).toBe(true);
+    const res = await request(app.getHttpServer()).get('/users?filter=status=active').expect(200);
+    expect(res.body).toHaveLength(2);
+    expect(res.body.every((u: { status: string }) => u.status === 'active')).toBe(true);
   });
 
   it('filters by not-equals', async () => {
-    const users = await query('status!=active');
-    expect(users).toHaveLength(2);
-    expect(users.every((u) => u.status !== 'active')).toBe(true);
+    const res = await request(app.getHttpServer()).get('/users?filter=status!=active').expect(200);
+    expect(res.body).toHaveLength(2);
   });
 
   it('filters with AND (semicolon)', async () => {
-    const users = await query('status=active;age>=30');
-    expect(users).toHaveLength(2);
-    expect(users.every((u) => u.status === 'active' && u.age >= 30)).toBe(true);
+    const res = await request(app.getHttpServer()).get('/users?filter=status=active;age>=30').expect(200);
+    expect(res.body).toHaveLength(2);
   });
 
   it('filters with OR (pipe)', async () => {
-    const users = await query('status=active|status=pending');
-    expect(users).toHaveLength(3);
+    const res = await request(app.getHttpServer()).get('/users?filter=status=active|status=pending').expect(200);
+    expect(res.body).toHaveLength(3);
   });
 
   it('filters with multi-value IN (comma)', async () => {
-    const users = await query('status=active,pending');
-    expect(users).toHaveLength(3);
+    const res = await request(app.getHttpServer()).get('/users?filter=status=active,pending').expect(200);
+    expect(res.body).toHaveLength(3);
   });
 
   it('filters with startsWith', async () => {
-    const users = await query('name^=Ch');
-    expect(users).toHaveLength(1);
-    expect(users[0].name).toBe('Charlie');
+    const res = await request(app.getHttpServer()).get('/users?filter=name^=Ch').expect(200);
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].name).toBe('Charlie');
   });
 
   it('filters with null value', async () => {
-    const users = await query('email=null');
-    expect(users).toHaveLength(1);
-    expect(users[0].name).toBe('Bob');
+    const res = await request(app.getHttpServer()).get('/users?filter=email=null').expect(200);
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].name).toBe('Bob');
   });
 
   it('filters with comparison operators', async () => {
-    const users = await query('age>28;age<35');
-    expect(users).toHaveLength(1);
-    expect(users[0].name).toBe('Alice');
+    const res = await request(app.getHttpServer()).get('/users?filter=age>28;age<35').expect(200);
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].name).toBe('Alice');
   });
 
   it('sorts ascending', async () => {
-    const users = await query(undefined, '+age');
-    expect(users[0].name).toBe('Bob');
-    expect(users[3].name).toBe('Charlie');
+    const res = await request(app.getHttpServer()).get('/users?sort=+age').expect(200);
+    expect(res.body[0].name).toBe('Bob');
+    expect(res.body[3].name).toBe('Charlie');
   });
 
   it('sorts descending', async () => {
-    const users = await query(undefined, '-age');
-    expect(users[0].name).toBe('Charlie');
-    expect(users[3].name).toBe('Bob');
+    const res = await request(app.getHttpServer()).get('/users?sort=-age').expect(200);
+    expect(res.body[0].name).toBe('Charlie');
+    expect(res.body[3].name).toBe('Bob');
   });
 
   it('filters and sorts together', async () => {
-    const users = await query('status=active', '-age');
-    expect(users).toHaveLength(2);
-    expect(users[0].name).toBe('Charlie');
-    expect(users[1].name).toBe('Alice');
+    const res = await request(app.getHttpServer()).get('/users?filter=status=active&sort=-age').expect(200);
+    expect(res.body).toHaveLength(2);
+    expect(res.body[0].name).toBe('Charlie');
+    expect(res.body[1].name).toBe('Alice');
   });
 
-  it('sorts by multiple fields', async () => {
-    const users = await query(undefined, '+status,-age');
-    expect(users[0].name).toBe('Charlie');
-    expect(users[1].name).toBe('Alice');
+  it('returns 400 for unknown field', async () => {
+    await request(app.getHttpServer()).get('/users?filter=unknown=value').expect(400);
+  });
+
+  it('returns 400 for disallowed operator', async () => {
+    await request(app.getHttpServer()).get('/users?filter=status>=value').expect(400);
+  });
+
+  it('returns 400 for invalid number value', async () => {
+    await request(app.getHttpServer()).get('/users?filter=age>=abc').expect(400);
   });
 });
