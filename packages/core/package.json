@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "chevrotain": "^11.0.0"
+    "chevrotain": "^10.5.0"
   },
   "peerDependencies": {
     "@nestjs/common": ">=10.0.0",
