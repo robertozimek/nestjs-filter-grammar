@@ -1,0 +1,22 @@
+{
+  "name": "@nestjs-filter-grammar/e2e",
+  "version": "0.0.1",
+  "private": true,
+  "description": "End-to-end integration tests for all nestjs-filter-grammar adapters",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@nestjs-filter-grammar/core": "workspace:*",
+    "@nestjs-filter-grammar/typeorm": "workspace:*",
+    "@nestjs-filter-grammar/prisma": "workspace:*",
+    "@nestjs-filter-grammar/mikroorm": "workspace:*",
+    "reflect-metadata": "^0.2.2",
+    "typeorm": "^0.3.0",
+    "sql.js": "^1.11.0",
+    "@mikro-orm/core": "^6.0.0",
+    "@mikro-orm/better-sqlite": "^6.0.0",
+    "better-sqlite3": "^11.0.0"
+  }
+}
