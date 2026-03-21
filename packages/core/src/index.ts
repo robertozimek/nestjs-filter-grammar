@@ -1,5 +1,6 @@
 // Types
 export {
+  AbstractConstructor,
   FilterOperator,
   EQUALITY_OPERATORS,
   FilterTree,

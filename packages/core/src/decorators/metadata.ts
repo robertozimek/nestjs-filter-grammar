@@ -1,12 +1,12 @@
 import 'reflect-metadata';
 import { FILTERABLE_KEY, FILTERABLE_COLUMNS_KEY, SORTABLE_COLUMNS_KEY } from './constants';
-import { ColumnMetadata, SortableColumnMetadata } from '../types';
+import { AbstractConstructor, ColumnMetadata, SortableColumnMetadata } from '../types';
 
-export function isFilterable(target: Function): boolean {
+export function isFilterable(target: AbstractConstructor): boolean {
   return Reflect.getOwnMetadata(FILTERABLE_KEY, target) === true;
 }
 
-export function getFilterableMetadata(target: Function): ColumnMetadata[] {
+export function getFilterableMetadata(target: AbstractConstructor): ColumnMetadata[] {
   const result: ColumnMetadata[] = [];
   const seen = new Set<string>();
 
@@ -29,7 +29,7 @@ export function getFilterableMetadata(target: Function): ColumnMetadata[] {
   return result;
 }
 
-export function getSortableMetadata(target: Function): SortableColumnMetadata[] {
+export function getSortableMetadata(target: AbstractConstructor): SortableColumnMetadata[] {
   const result: SortableColumnMetadata[] = [];
   const seen = new Set<string>();
   let current: Function | null = target;

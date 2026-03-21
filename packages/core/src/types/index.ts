@@ -1,6 +1,9 @@
 export { SortDirection, SortEntry, SortableColumnMetadata } from './sort';
 import type { SortEntry } from './sort';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- constructor signatures inherently accept any args
+export type AbstractConstructor = abstract new (...args: any[]) => any;
+
 export enum FilterOperator {
   /** Equals (=) */
   eq = '=',

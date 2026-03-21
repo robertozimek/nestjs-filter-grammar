@@ -4,7 +4,7 @@ import { validateFilter } from '../validate';
 import { coerceFilterValues } from '../coerce';
 import { getFilterableMetadata, getSortableMetadata, isFilterable } from '../decorators/metadata';
 import { FilterParseException } from '../errors/filter-parse-exception';
-import { FilterResult, FilterTree, ColumnMetadata, SortableColumnMetadata } from '../types';
+import { AbstractConstructor, FilterResult, FilterTree, ColumnMetadata, SortableColumnMetadata } from '../types';
 import type { SortEntry } from '../types';
 import { buildSwaggerDescription, buildSortSwaggerDescription, buildFilterGrammarExtension } from '../swagger/swagger.util';
 import { parseSortString } from '../sort/sort-parser';
@@ -21,7 +21,7 @@ export interface FilterOptions {
  * Falls back to raw object copy if class-transformer is not available.
  */
 function transformQuery(
-  queryClass: Function,
+  queryClass: AbstractConstructor,
   rawQuery: Record<string, string | string[] | undefined>,
   excludeKeys: Set<string>,
 ): Record<string, string | string[] | undefined> {
@@ -40,7 +40,7 @@ function transformQuery(
   }
 }
 
-function createFilterDecorator(queryClass: Function, options: FilterOptions = {}) {
+function createFilterDecorator(queryClass: AbstractConstructor, options: FilterOptions = {}): ParameterDecorator {
   if (!isFilterable(queryClass)) {
     throw new Error(
       `Class '${queryClass.name}' is not decorated with @Filterable(). ` +
@@ -158,7 +158,7 @@ function applySwaggerMetadata(
   }
 }
 
-export function Filter(queryClass: Function, options: FilterOptions = {}): ParameterDecorator {
+export function Filter(queryClass: AbstractConstructor, options: FilterOptions = {}): ParameterDecorator {
   return (target: object, propertyKey: string | symbol | undefined, parameterIndex: number) => {
     if (!propertyKey) return;
 
