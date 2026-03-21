@@ -165,6 +165,52 @@ interface SortEntry {
 }
 ```
 
-### Swagger
+### Coercion
 
-When `@nestjs/swagger` is installed, `@Filter()` automatically adds `@ApiQuery` decorators with generated descriptions listing available columns and operators.
+#### `coerceFilterValues(tree, metadata): CoerceResult`
+
+Walks a `FilterTree` and converts string values to their declared types based on `ColumnMetadata.valueType`. Called automatically by `@Filter()`, but available for manual use when calling `parseFilter()` directly.
+
+```typescript
+import { parseFilter, coerceFilterValues } from '@nestjs-filter-grammar/core';
+
+const tree = parseFilter('age>=30');
+const { tree: coerced, errors } = coerceFilterValues(tree, metadata);
+// coerced values: { type: 'number', value: 30 } instead of { type: 'string', value: '30' }
+```
+
+Quoted values (`field="123"`) are never coerced — they always remain strings.
+
+### Swagger & OpenAPI
+
+When `@nestjs/swagger` is installed, `@Filter()` automatically:
+
+1. Adds `@ApiQuery` decorators with generated descriptions listing available columns and operators
+2. Emits an `x-filter-grammar` extension on the operation with structured metadata for codegen:
+
+```json
+{
+  "x-filter-grammar": {
+    "filterParam": "filter",
+    "sortParam": "sort",
+    "fields": {
+      "name": { "operators": ["=", "!=", "*~"], "type": "string" },
+      "status": { "operators": ["=", "!="], "type": "enum", "values": ["active", "inactive"] },
+      "age": { "operators": [">=", "<="], "type": "number" }
+    },
+    "sortable": ["name", "status", "age"]
+  }
+}
+```
+
+This extension is consumed by `@nestjs-filter-grammar/client-query-builder` to generate type-safe query builders.
+
+### Parenthesized Expressions
+
+The grammar supports parentheses for grouping:
+
+```
+(status=active|status=pending);age>=18
+name=admin|(status=active;age>=18)
+(a=1;b=2)|(c=3;d=4)
+```

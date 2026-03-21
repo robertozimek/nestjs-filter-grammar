@@ -1,15 +1,16 @@
 # nestjs-filter-grammar
 
-A filter and sort DSL for NestJS APIs. Declare filterable columns with decorators, parse filter strings from query parameters, and translate them into TypeORM, Prisma, or MikroORM queries.
+A filter and sort DSL for NestJS APIs. Declare filterable columns with decorators, parse filter strings from query parameters, and translate them into TypeORM, Prisma, or MikroORM queries. Includes a client-side query builder with OpenAPI codegen for type-safe filter construction.
 
 ## Packages
 
 | Package | Description |
 |---------|-------------|
-| [`@nestjs-filter-grammar/core`](./packages/core) | Grammar parser, decorators, validation, Swagger generation |
+| [`@nestjs-filter-grammar/core`](./packages/core) | Grammar parser, decorators, validation, Swagger + OpenAPI extensions |
 | [`@nestjs-filter-grammar/typeorm`](./packages/typeorm) | TypeORM `SelectQueryBuilder` adapter |
 | [`@nestjs-filter-grammar/prisma`](./packages/prisma) | Prisma `where`/`orderBy` adapter |
 | [`@nestjs-filter-grammar/mikroorm`](./packages/mikroorm) | MikroORM `FilterQuery`/`QueryOrderMap` adapter |
+| [`@nestjs-filter-grammar/client-query-builder`](./packages/client-query-builder) | Type-safe client query builder with OpenAPI codegen |
 
 ## Quick Start
 
@@ -104,6 +105,64 @@ const users = await em.find(User,
 );
 ```
 
+## Client Query Builder
+
+Generate type-safe filter builders from your API's OpenAPI spec.
+
+### Install
+
+```bash
+npm install @nestjs-filter-grammar/client-query-builder
+```
+
+### Generate from OpenAPI spec
+
+```bash
+npx filter-grammar generate ./openapi.json -o ./src/generated
+```
+
+This reads `x-filter-grammar` extensions from the spec (automatically added by `@Filter()` when `@nestjs/swagger` is installed) and generates typed filter/sort objects.
+
+### Usage
+
+```typescript
+import { and, or, sort } from '@nestjs-filter-grammar/client-query-builder';
+import { FilterUsers, SortUsers } from './generated';
+
+// Simple filter
+const filter = FilterUsers.name.eq('John').build();
+// → "name=John"
+
+// Multi-value (IN)
+const filter = FilterUsers.status.eq('active', 'pending').build();
+// → "status=active,pending"
+
+// Null
+const filter = FilterUsers.email.eq(null).build();
+// → "email=null"
+
+// Combine with and/or
+const filter = and(
+  FilterUsers.name.eq('John'),
+  or(
+    FilterUsers.status.eq('active'),
+    FilterUsers.status.eq('pending'),
+  ),
+  FilterUsers.age.gte(18),
+).build();
+// → "name=John;(status=active|status=pending);age>=18"
+
+// Sort
+const sortStr = sort(
+  SortUsers.name.asc(),
+  SortUsers.age.desc(),
+).build();
+// → "+name,-age"
+
+// Use with fetch
+fetch(`/api/users?filter=${filter}&sort=${sortStr}`);
+```
+
 ## Grammar Reference
 
 Filter strings use this grammar:
@@ -111,7 +170,8 @@ Filter strings use this grammar:
 ```
 filter     → or_expr
 or_expr    → and_expr ( "|" and_expr )*
-and_expr   → condition ( ";" condition )*
+and_expr   → atom ( ";" atom )*
+atom       → condition | "(" or_expr ")"
 condition  → field operator values
 values     → value ( "," value )*
 value      → TOKEN | STRING_LITERAL | "null"
@@ -140,9 +200,10 @@ value      → TOKEN | STRING_LITERAL | "null"
 
 - **AND** (semicolon): `status=active;age>=18`
 - **OR** (pipe): `status=active|status=pending`
+- **Grouping** (parentheses): `(status=active|status=pending);age>=18`
 - **Multi-value / IN** (comma): `status=active,pending`
 - **Null**: `status=null`
-- **Quoted values**: `name="hello world"`
+- **Quoted values**: `name="hello world"` (preserves commas, spaces, special chars)
 
 ### Sort Syntax
 

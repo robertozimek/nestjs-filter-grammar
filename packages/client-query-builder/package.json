@@ -1,6 +1,6 @@
 {
   "name": "@nestjs-filter-grammar/client-query-builder",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Type-safe client-side filter/sort query builder with OpenAPI codegen for @nestjs-filter-grammar",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

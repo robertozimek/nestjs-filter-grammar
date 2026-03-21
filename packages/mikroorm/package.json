@@ -1,6 +1,6 @@
 {
   "name": "@nestjs-filter-grammar/mikroorm",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "MikroORM adapter for @nestjs-filter-grammar — translates FilterTree into MikroORM FilterQuery objects",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
