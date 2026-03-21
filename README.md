@@ -37,17 +37,19 @@ import {
   FilterOperator,
 } from '@nestjs-filter-grammar/core';
 
+enum Status { active = 'active', inactive = 'inactive', pending = 'pending' }
+
 @Filterable()
 class UserQuery {
   @FilterableColumn([FilterOperator.eq, FilterOperator.neq, FilterOperator.iContains])
   @SortableColumn()
   name!: string;
 
-  @FilterableColumn([FilterOperator.eq, FilterOperator.neq])
+  @FilterableColumn([FilterOperator.eq, FilterOperator.neq], { type: Status })
   @SortableColumn()
-  status!: string;
+  status!: Status;
 
-  @FilterableColumn([FilterOperator.gte, FilterOperator.lte])
+  @FilterableColumn([FilterOperator.gte, FilterOperator.lte], { type: 'number' })
   @SortableColumn()
   age!: number;
 }

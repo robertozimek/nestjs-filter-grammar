@@ -28,7 +28,7 @@ Class decorator — marks a query DTO as filterable.
 class UserQuery { ... }
 ```
 
-#### `@FilterableColumn(operators)`
+#### `@FilterableColumn(operators, options?)`
 
 Property decorator — declares which filter operators a column supports.
 
@@ -36,6 +36,34 @@ Property decorator — declares which filter operators a column supports.
 @FilterableColumn([FilterOperator.eq, FilterOperator.neq, FilterOperator.iContains])
 name!: string;
 ```
+
+The optional `options.type` parameter controls value coercion and validation. By default, values are strings.
+
+```typescript
+// Number — coerces "30" to 30, rejects "abc"
+@FilterableColumn([FilterOperator.gte, FilterOperator.lte], { type: 'number' })
+age!: number;
+
+// Boolean — accepts "true"/"false" only
+@FilterableColumn([FilterOperator.eq], { type: 'boolean' })
+active!: boolean;
+
+// Enum — validates value is one of the enum members
+enum Status { active = 'active', inactive = 'inactive', pending = 'pending' }
+@FilterableColumn([FilterOperator.eq, FilterOperator.neq], { type: Status })
+status!: Status;
+
+// String array — same as enum but without defining one
+@FilterableColumn([FilterOperator.eq], { type: ['red', 'green', 'blue'] })
+color!: string;
+
+// Numeric enum — coerces "1" to 1, validates against allowed values
+enum Priority { low = 0, medium = 1, high = 2 }
+@FilterableColumn([FilterOperator.eq], { type: Priority })
+priority!: Priority;
+```
+
+Quoted values (`field="123"`) are never coerced and always stay as strings, regardless of the declared type.
 
 #### `@SortableColumn()`
 
