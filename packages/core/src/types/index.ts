@@ -1,3 +1,6 @@
+export { SortDirection, SortEntry, SortableColumnMetadata } from './sort';
+import type { SortEntry } from './sort';
+
 export enum FilterOperator {
   /** Equals (=) */
   eq = '=',
@@ -60,6 +63,7 @@ export type FilterValue =
 
 export interface FilterResult<T = Record<string, never>> {
   filter?: FilterTree;
+  sort?: SortEntry[];
   query: T;
 }
 
