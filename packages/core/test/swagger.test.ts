@@ -1,0 +1,40 @@
+import 'reflect-metadata';
+import { describe, it, expect } from 'vitest';
+import { buildSwaggerDescription } from '../src/swagger/swagger.util';
+import { FilterOperator, ColumnMetadata } from '../src/types';
+
+describe('buildSwaggerDescription', () => {
+  it('generates description for single column', () => {
+    const metadata: ColumnMetadata[] = [
+      { propertyKey: 'id', operators: [FilterOperator.eq, FilterOperator.neq] },
+    ];
+    const desc = buildSwaggerDescription(metadata);
+    expect(desc).toContain('id: (=, !=)');
+  });
+
+  it('generates description for multiple columns', () => {
+    const metadata: ColumnMetadata[] = [
+      { propertyKey: 'id', operators: [FilterOperator.eq, FilterOperator.neq] },
+      { propertyKey: 'name', operators: [FilterOperator.eq, FilterOperator.iContains] },
+    ];
+    const desc = buildSwaggerDescription(metadata);
+    expect(desc).toContain('id: (=, !=)');
+    expect(desc).toContain('name: (=, *~)');
+  });
+
+  it('includes syntax guide', () => {
+    const metadata: ColumnMetadata[] = [
+      { propertyKey: 'id', operators: [FilterOperator.eq] },
+    ];
+    const desc = buildSwaggerDescription(metadata);
+    expect(desc).toContain('AND:');
+    expect(desc).toContain('OR:');
+    expect(desc).toContain('IN:');
+    expect(desc).toContain('Null:');
+  });
+
+  it('returns empty string for no columns', () => {
+    const desc = buildSwaggerDescription([]);
+    expect(desc).toBe('');
+  });
+});
