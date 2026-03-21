@@ -1,13 +1,16 @@
 import { createParamDecorator, ExecutionContext, BadRequestException } from '@nestjs/common';
 import { parseFilter } from '../parse';
 import { validateFilter } from '../validate';
-import { getFilterableMetadata, isFilterable } from '../decorators/metadata';
+import { getFilterableMetadata, getSortableMetadata, isFilterable } from '../decorators/metadata';
 import { FilterParseException } from '../errors/filter-parse-exception';
-import { FilterResult, ColumnMetadata } from '../types';
-import { buildSwaggerDescription } from '../swagger/swagger.util';
+import { FilterResult, ColumnMetadata, SortableColumnMetadata } from '../types';
+import { buildSwaggerDescription, buildSortSwaggerDescription } from '../swagger/swagger.util';
+import { parseSortString } from '../sort/sort-parser';
+import { validateSort } from '../sort/sort-validator';
 
 export interface FilterOptions {
   queryParam?: string;
+  sortParam?: string;
   optional?: boolean;
 }
 
@@ -18,13 +21,11 @@ export interface FilterOptions {
 function transformQuery(
   queryClass: Function,
   rawQuery: Record<string, any>,
-  filterableKeys: Set<string>,
-  filterParamName: string,
+  excludeKeys: Set<string>,
 ): Record<string, any> {
-  // Extract only non-filter, non-filterable-column params
   const plain: Record<string, any> = {};
   for (const [key, value] of Object.entries(rawQuery)) {
-    if (key !== filterParamName && !filterableKeys.has(key)) {
+    if (!excludeKeys.has(key)) {
       plain[key] = value;
     }
   }
@@ -33,7 +34,6 @@ function transformQuery(
     const { plainToInstance } = require('class-transformer');
     return plainToInstance(queryClass, plain, { enableImplicitConversion: true });
   } catch {
-    // class-transformer not available — return raw values
     return plain;
   }
 }
@@ -47,8 +47,10 @@ function createFilterDecorator(queryClass: Function, options: FilterOptions = {}
   }
 
   const metadata: ColumnMetadata[] = getFilterableMetadata(queryClass);
+  const sortableMetadata: SortableColumnMetadata[] = getSortableMetadata(queryClass);
   const filterableKeys = new Set(metadata.map((m) => m.propertyKey));
   const paramName = options.queryParam ?? 'filter';
+  const sortParamName = options.sortParam ?? 'sort';
   const isOptional = options.optional ?? false;
 
   return createParamDecorator(
@@ -56,43 +58,58 @@ function createFilterDecorator(queryClass: Function, options: FilterOptions = {}
       const request = ctx.switchToHttp().getRequest();
       const queryParams = request.query ?? {};
       const filterString: string | undefined = queryParams[paramName];
+      const sortString: string | undefined = queryParams[sortParamName];
 
-      // Handle missing/empty filter
+      // Handle filter
+      let filter: FilterResult<any>['filter'];
       if (!filterString || filterString.trim() === '') {
         if (!isOptional) {
           throw new BadRequestException({
             message: `Missing required query parameter '${paramName}'`,
           });
         }
-        return {
-          filter: undefined,
-          query: transformQuery(queryClass, queryParams, filterableKeys, paramName),
-        };
+        filter = undefined;
+      } else {
+        const tree = parseFilter(filterString);
+        const filterErrors = validateFilter(tree, metadata);
+        if (filterErrors.length > 0) {
+          throw new FilterParseException(filterErrors);
+        }
+        filter = tree;
       }
 
-      // Parse
-      const tree = parseFilter(filterString);
-
-      // Validate against metadata
-      const errors = validateFilter(tree, metadata);
-      if (errors.length > 0) {
-        throw new FilterParseException(errors);
+      // Handle sort — only if the query class has @SortableColumn decorators
+      let sort: FilterResult<any>['sort'];
+      if (sortableMetadata.length > 0 && sortString && sortString.trim() !== '') {
+        const sortEntries = parseSortString(sortString);
+        const sortErrors = validateSort(sortEntries, sortableMetadata);
+        if (sortErrors.length > 0) {
+          throw new FilterParseException(sortErrors);
+        }
+        sort = sortEntries;
       }
+      // If no @SortableColumn decorators, sort param is ignored (sort remains undefined)
+
+      // Exclude filter, sort, and filterable column params from query
+      const excludeKeys = new Set([...filterableKeys, paramName, sortParamName]);
 
       return {
-        filter: tree,
-        query: transformQuery(queryClass, queryParams, filterableKeys, paramName),
+        filter,
+        sort,
+        query: transformQuery(queryClass, queryParams, excludeKeys),
       };
     },
   )();
 }
 
 /**
- * Applies @ApiQuery swagger metadata to the method descriptor if @nestjs/swagger is available.
+ * Applies @ApiQuery swagger metadata for filter and sort params.
  */
 function applySwaggerMetadata(
   metadata: ColumnMetadata[],
+  sortableMetadata: SortableColumnMetadata[],
   paramName: string,
+  sortParamName: string,
   isOptional: boolean,
   target: object,
   propertyKey: string | symbol,
@@ -100,14 +117,27 @@ function applySwaggerMetadata(
   try {
     const { ApiQuery } = require('@nestjs/swagger');
     if (ApiQuery) {
-      const description = buildSwaggerDescription(metadata);
-      const decorator = ApiQuery({
+      // Filter query param description
+      const filterDescription = buildSwaggerDescription(metadata);
+      const filterDecorator = ApiQuery({
         name: paramName,
         required: !isOptional,
-        description,
+        description: filterDescription,
         type: String,
       });
-      decorator(target, propertyKey, Object.getOwnPropertyDescriptor(target, propertyKey)!);
+      filterDecorator(target, propertyKey, Object.getOwnPropertyDescriptor(target, propertyKey)!);
+
+      // Sort query param description (only if sortable columns exist)
+      if (sortableMetadata.length > 0) {
+        const sortDescription = buildSortSwaggerDescription(sortableMetadata);
+        const sortDecorator = ApiQuery({
+          name: sortParamName,
+          required: false,
+          description: sortDescription,
+          type: String,
+        });
+        sortDecorator(target, propertyKey, Object.getOwnPropertyDescriptor(target, propertyKey)!);
+      }
     }
   } catch {
     // @nestjs/swagger not installed — no-op
@@ -119,11 +149,13 @@ export function Filter(queryClass: Function, options: FilterOptions = {}): Param
     if (!propertyKey) return;
 
     const metadata: ColumnMetadata[] = getFilterableMetadata(queryClass);
+    const sortableMetadata: SortableColumnMetadata[] = getSortableMetadata(queryClass);
     const paramName = options.queryParam ?? 'filter';
+    const sortParamName = options.sortParam ?? 'sort';
     const isOptional = options.optional ?? false;
 
-    // Apply swagger metadata to the method
-    applySwaggerMetadata(metadata, paramName, isOptional, target, propertyKey);
+    // Apply swagger metadata
+    applySwaggerMetadata(metadata, sortableMetadata, paramName, sortParamName, isOptional, target, propertyKey);
 
     // Apply the param decorator
     const paramDecorator = createFilterDecorator(queryClass, options);

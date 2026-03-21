@@ -6,6 +6,7 @@ import request from 'supertest';
 import { Filter } from '../src/param/filter.decorator';
 import { Filterable } from '../src/decorators/filterable.decorator';
 import { FilterableColumn } from '../src/decorators/filterable-column.decorator';
+import { SortableColumn } from '../src/decorators/sortable-column.decorator';
 import { FilterOperator, FilterResult } from '../src/types';
 
 @Filterable()
@@ -20,6 +21,16 @@ class UserQuery {
 @Filterable()
 class FullQuery extends UserQuery {
   includeChildren!: boolean;
+}
+
+@Filterable()
+class SortableQuery extends UserQuery {
+  @SortableColumn()
+  @FilterableColumn([FilterOperator.eq, FilterOperator.iContains])
+  name!: string;
+
+  @SortableColumn()
+  createdAt!: string;
 }
 
 @Controller('test')
@@ -41,6 +52,21 @@ class TestController {
 
   @Get('custom-param')
   customParam(@Filter(UserQuery, { queryParam: 'q' }) result: FilterResult<UserQuery>) {
+    return result;
+  }
+
+  @Get('sortable')
+  sortable(@Filter(SortableQuery) result: FilterResult<SortableQuery>) {
+    return result;
+  }
+
+  @Get('optional-sort')
+  optionalSort(@Filter(SortableQuery, { optional: true }) result: FilterResult<SortableQuery>) {
+    return result;
+  }
+
+  @Get('custom-sort')
+  customSort(@Filter(SortableQuery, { sortParam: 'order' }) result: FilterResult<SortableQuery>) {
     return result;
   }
 }
@@ -134,5 +160,60 @@ describe('@Filter() parameter decorator', () => {
       .expect(200);
 
     expect(res.body.filter).toBeDefined();
+  });
+
+  it('parses sort parameter', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/test/sortable?filter=status=active&sort=+name,-createdAt')
+      .expect(200);
+    expect(res.body.sort).toEqual([
+      { field: 'name', direction: 'asc' },
+      { field: 'createdAt', direction: 'desc' },
+    ]);
+  });
+
+  it('returns sort undefined when sort param is missing', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/test/sortable?filter=status=active')
+      .expect(200);
+    expect(res.body.sort).toBeUndefined();
+  });
+
+  it('returns 400 for unknown sort field', async () => {
+    await request(app.getHttpServer())
+      .get('/test/sortable?filter=status=active&sort=+unknown')
+      .expect(400);
+  });
+
+  it('returns 400 for duplicate sort fields', async () => {
+    await request(app.getHttpServer())
+      .get('/test/sortable?filter=status=active&sort=+name,-name')
+      .expect(400);
+  });
+
+  it('works with sort only (optional filter)', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/test/optional-sort?sort=-name')
+      .expect(200);
+    expect(res.body.sort).toEqual([
+      { field: 'name', direction: 'desc' },
+    ]);
+    expect(res.body.filter).toBeUndefined();
+  });
+
+  it('uses custom sort param name', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/test/custom-sort?filter=status=active&order=+name')
+      .expect(200);
+    expect(res.body.sort).toEqual([
+      { field: 'name', direction: 'asc' },
+    ]);
+  });
+
+  it('ignores sort param when no @SortableColumn decorators exist', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/test/basic?filter=status=active&sort=+anything')
+      .expect(200);
+    expect(res.body.sort).toBeUndefined();
   });
 });
