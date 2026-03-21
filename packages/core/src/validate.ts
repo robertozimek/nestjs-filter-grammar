@@ -50,7 +50,7 @@ function validateCondition(
   }
 
   if (!meta.operators.includes(condition.operator)) {
-    const allowed = meta.operators.map((o) => o).join(', ');
+    const allowed = meta.operators.join(', ');
     errors.push({
       message: `Operator '${condition.operator}' is not allowed for field '${condition.field}'. Allowed operators: ${allowed}`,
       offset: condition.operatorOffset,

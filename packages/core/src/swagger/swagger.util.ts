@@ -7,7 +7,7 @@ export function buildSwaggerDescription(metadata: ColumnMetadata[]): string {
 
   const fields = metadata
     .map((col) => {
-      const ops = col.operators.map((o) => o).join(', ');
+      const ops = col.operators.join(', ');
       return `  ${col.propertyKey}: (${ops})`;
     })
     .join('\n');
@@ -59,7 +59,7 @@ export interface FilterGrammarExtension {
 }
 
 function resolveFieldDef(meta: ColumnMetadata): FilterGrammarFieldDef {
-  const operators = meta.operators.map((o) => o as string);
+  const operators: string[] = [...meta.operators];
   const valueType = meta.valueType;
 
   if (valueType === 'string' || valueType === 'number' || valueType === 'boolean') {
