@@ -38,7 +38,8 @@ export { FilterParseException } from './errors/filter-parse-exception';
 export { coerceFilterValues } from './coerce';
 
 // Swagger
-export { buildSwaggerDescription } from './swagger/swagger.util';
+export { buildSwaggerDescription, buildFilterGrammarExtension } from './swagger/swagger.util';
+export type { FilterGrammarExtension, FilterGrammarFieldDef } from './swagger/swagger.util';
 
 // Sort
 export { parseSortString } from './sort/sort-parser';

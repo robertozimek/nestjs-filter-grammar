@@ -6,7 +6,7 @@ import { getFilterableMetadata, getSortableMetadata, isFilterable } from '../dec
 import { FilterParseException } from '../errors/filter-parse-exception';
 import { FilterResult, FilterTree, ColumnMetadata, SortableColumnMetadata } from '../types';
 import type { SortEntry } from '../types';
-import { buildSwaggerDescription, buildSortSwaggerDescription } from '../swagger/swagger.util';
+import { buildSwaggerDescription, buildSortSwaggerDescription, buildFilterGrammarExtension } from '../swagger/swagger.util';
 import { parseSortString } from '../sort/sort-parser';
 import { validateSort } from '../sort/sort-validator';
 
@@ -144,6 +144,13 @@ function applySwaggerMetadata(
           type: String,
         });
         sortDecorator(target, propertyKey, Object.getOwnPropertyDescriptor(target, propertyKey)!);
+      }
+      // Apply x-filter-grammar extension to the operation
+      const { ApiExtension } = require('@nestjs/swagger');
+      if (ApiExtension) {
+        const extension = buildFilterGrammarExtension(metadata, sortableMetadata, paramName, sortParamName);
+        const extensionDecorator = ApiExtension('x-filter-grammar', extension);
+        extensionDecorator(target, propertyKey, Object.getOwnPropertyDescriptor(target, propertyKey)!);
       }
     }
   } catch {
