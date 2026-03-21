@@ -1,0 +1,23 @@
+{
+  "name": "@nestjs-filter-grammar/prisma",
+  "version": "0.0.1",
+  "description": "Prisma adapter for @nestjs-filter-grammar — translates FilterTree into Prisma where/orderBy objects",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@nestjs-filter-grammar/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "@prisma/client": ">=5.0.0"
+  },
+  "devDependencies": {
+    "@prisma/client": "^6.0.0"
+  },
+  "files": ["dist"]
+}
