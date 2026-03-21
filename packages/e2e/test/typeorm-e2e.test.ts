@@ -180,12 +180,23 @@ describe('TypeORM E2E — NestJS + SQLite', () => {
     expect(res.body[1].name).toBe('Alice');
   });
 
-  it('filters with parenthesized OR within AND', async () => {
-    const res = await request(app.getHttpServer())
-      .get('/users?filter=(status=active|status=pending);age>=28')
+  it('parentheses change grouping (without parens: OR has lower precedence)', async () => {
+    // Without parens: status=inactive|name=Alice;age>=30
+    // Means: status=inactive OR (name=Alice AND age>=30) → Bob + Alice = 2
+    const without = await request(app.getHttpServer())
+      .get('/users?filter=status=inactive|name=Alice;age>=30')
       .expect(200);
-    // active with age>=28: Alice(30), Charlie(35). pending with age>=28: Diana(28).
-    expect(res.body).toHaveLength(3);
+    expect(without.body).toHaveLength(2);
+  });
+
+  it('parentheses change grouping (with parens: OR groups explicitly)', async () => {
+    // With parens: (status=inactive|name=Alice);age>=30
+    // Means: (status=inactive OR name=Alice) AND age>=30 → only Alice(30) = 1
+    const with_ = await request(app.getHttpServer())
+      .get('/users?filter=(status=inactive|name=Alice);age>=30')
+      .expect(200);
+    expect(with_.body).toHaveLength(1);
+    expect(with_.body[0].name).toBe('Alice');
   });
 
   it('returns 400 for unknown field', async () => {

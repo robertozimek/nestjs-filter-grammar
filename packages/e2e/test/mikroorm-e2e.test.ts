@@ -169,6 +169,23 @@ describe('MikroORM E2E — NestJS + SQLite', () => {
     expect(res.body[1].name).toBe('Alice');
   });
 
+  it('parentheses change grouping (without parens: OR has lower precedence)', async () => {
+    // status=inactive|name=Alice;age>=30 → status=inactive OR (name=Alice AND age>=30) → Bob + Alice = 2
+    const res = await request(app.getHttpServer())
+      .get('/users?filter=status=inactive|name=Alice;age>=30')
+      .expect(200);
+    expect(res.body).toHaveLength(2);
+  });
+
+  it('parentheses change grouping (with parens: OR groups explicitly)', async () => {
+    // (status=inactive|name=Alice);age>=30 → (status=inactive OR name=Alice) AND age>=30 → Alice only = 1
+    const res = await request(app.getHttpServer())
+      .get('/users?filter=(status=inactive|name=Alice);age>=30')
+      .expect(200);
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].name).toBe('Alice');
+  });
+
   it('returns 400 for unknown field', async () => {
     await request(app.getHttpServer()).get('/users?filter=unknown=value').expect(400);
   });
