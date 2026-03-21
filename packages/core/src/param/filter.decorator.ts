@@ -59,8 +59,10 @@ function createFilterDecorator(queryClass: AbstractConstructor, options: FilterO
     (_data: unknown, ctx: ExecutionContext): FilterResult<Record<string, string | string[] | undefined>> => {
       const request = ctx.switchToHttp().getRequest();
       const queryParams: Record<string, string | string[] | undefined> = request.query ?? {};
-      const filterString: string | undefined = queryParams[paramName] as string | undefined;
-      const sortString: string | undefined = queryParams[sortParamName] as string | undefined;
+      const filterRaw = queryParams[paramName];
+      const filterString = typeof filterRaw === 'string' ? filterRaw : undefined;
+      const sortRaw = queryParams[sortParamName];
+      const sortString = typeof sortRaw === 'string' ? sortRaw : undefined;
 
       // Handle filter
       let filter: FilterTree | undefined;
@@ -123,35 +125,38 @@ function applySwaggerMetadata(
 ): void {
   try {
     const { ApiQuery } = require('@nestjs/swagger');
-    if (ApiQuery) {
-      // Filter query param description
-      const filterDescription = buildSwaggerDescription(metadata);
-      const filterDecorator = ApiQuery({
-        name: paramName,
-        required: !isOptional,
-        description: filterDescription,
+    if (!ApiQuery) return;
+
+    const descriptor = Object.getOwnPropertyDescriptor(target, propertyKey);
+
+    // Filter query param description
+    const filterDescription = buildSwaggerDescription(metadata);
+    const filterDecorator = ApiQuery({
+      name: paramName,
+      required: !isOptional,
+      description: filterDescription,
+      type: String,
+    });
+    filterDecorator(target, propertyKey, descriptor);
+
+    // Sort query param description (only if sortable columns exist)
+    if (sortableMetadata.length > 0) {
+      const sortDescription = buildSortSwaggerDescription(sortableMetadata);
+      const sortDecorator = ApiQuery({
+        name: sortParamName,
+        required: false,
+        description: sortDescription,
         type: String,
       });
-      filterDecorator(target, propertyKey, Object.getOwnPropertyDescriptor(target, propertyKey)!);
+      sortDecorator(target, propertyKey, descriptor);
+    }
 
-      // Sort query param description (only if sortable columns exist)
-      if (sortableMetadata.length > 0) {
-        const sortDescription = buildSortSwaggerDescription(sortableMetadata);
-        const sortDecorator = ApiQuery({
-          name: sortParamName,
-          required: false,
-          description: sortDescription,
-          type: String,
-        });
-        sortDecorator(target, propertyKey, Object.getOwnPropertyDescriptor(target, propertyKey)!);
-      }
-      // Apply x-filter-grammar extension to the operation
-      const { ApiExtension } = require('@nestjs/swagger');
-      if (ApiExtension) {
-        const extension = buildFilterGrammarExtension(metadata, sortableMetadata, paramName, sortParamName);
-        const extensionDecorator = ApiExtension('x-filter-grammar', extension);
-        extensionDecorator(target, propertyKey, Object.getOwnPropertyDescriptor(target, propertyKey)!);
-      }
+    // Apply x-filter-grammar extension to the operation
+    const { ApiExtension } = require('@nestjs/swagger');
+    if (ApiExtension) {
+      const extension = buildFilterGrammarExtension(metadata, sortableMetadata, paramName, sortParamName);
+      const extensionDecorator = ApiExtension('x-filter-grammar', extension);
+      extensionDecorator(target, propertyKey, descriptor);
     }
   } catch {
     // @nestjs/swagger not installed — no-op
