@@ -63,7 +63,10 @@ export function generate(specPath: string, outputDir: string): void {
   const barrelEntries: BarrelEntry[] = [];
 
   for (const [path, endpoint] of endpoints) {
-    const name = names.get(path)!;
+    const name = names.get(path);
+    if (!name) {
+      throw new Error(`Failed to resolve name for path: ${path}`);
+    }
     const filename = name.charAt(0).toLowerCase() + name.slice(1);
     const content = generateFile(name, endpoint);
 
