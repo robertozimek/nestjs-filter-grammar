@@ -4,19 +4,19 @@ import type {
   FilterGroup,
 } from '@nestjs-filter-grammar/core';
 import { getMikroOrmOperator, wrapLikeValue } from './operators';
-import type { ApplyFilterOptions, MikroOrmColumnMapFn } from './types';
+import type { ApplyFilterOptions, MikroOrmColumnMapFn, MikroOrmQueryValue } from './types';
 
 export function applyFilter(
   tree: FilterTree,
   options?: ApplyFilterOptions,
-): Record<string, any> {
+): Record<string, MikroOrmQueryValue> {
   return buildNode(tree, options?.columnMap);
 }
 
 function buildNode(
   node: FilterTree,
   columnMap?: ApplyFilterOptions['columnMap'],
-): Record<string, any> {
+): Record<string, MikroOrmQueryValue> {
   if ('field' in node) {
     return buildCondition(node, columnMap);
   }
@@ -26,7 +26,7 @@ function buildNode(
 function buildGroup(
   group: FilterGroup,
   columnMap?: ApplyFilterOptions['columnMap'],
-): Record<string, any> {
+): Record<string, MikroOrmQueryValue> {
   const key = group.type === 'AND' ? '$and' : '$or';
   const children = group.conditions.map((c) => buildNode(c, columnMap));
   return { [key]: children };
@@ -35,7 +35,7 @@ function buildGroup(
 function buildCondition(
   condition: FilterCondition,
   columnMap?: ApplyFilterOptions['columnMap'],
-): Record<string, any> {
+): Record<string, MikroOrmQueryValue> {
   // Check for column map callback
   if (columnMap && condition.field in columnMap) {
     const mapping = columnMap[condition.field];

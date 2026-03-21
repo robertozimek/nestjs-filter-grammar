@@ -76,7 +76,7 @@ function applyCondition(
   if (columnMap && condition.field in columnMap) {
     const mapping = columnMap[condition.field];
     if (typeof mapping === 'function') {
-      (mapping as TypeOrmColumnMapFn)(qb as SelectQueryBuilder<any>, condition.operator, condition.values);
+      (mapping as TypeOrmColumnMapFn)(qb as SelectQueryBuilder<ObjectLiteral>, condition.operator, condition.values);
       return;
     }
   }

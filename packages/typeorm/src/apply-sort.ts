@@ -14,7 +14,7 @@ export function applySort<T extends ObjectLiteral>(
     if (options?.columnMap && entry.field in options.columnMap) {
       const mapping = options.columnMap[entry.field];
       if (typeof mapping === 'function') {
-        (mapping as TypeOrmSortMapFn)(qb, sqlDirection);
+        (mapping as TypeOrmSortMapFn)(qb as SelectQueryBuilder<ObjectLiteral>, sqlDirection);
         continue;
       }
     }

@@ -1,11 +1,11 @@
 import type { SortEntry } from '@nestjs-filter-grammar/core';
-import type { ApplySortOptions, MikroOrmSortMapFn } from './types';
+import type { ApplySortOptions, MikroOrmQueryValue, MikroOrmSortMapFn } from './types';
 
 export function applySort(
   entries: SortEntry[],
   options?: ApplySortOptions,
-): Record<string, any> {
-  const orderMap: Record<string, any> = {};
+): Record<string, MikroOrmQueryValue> {
+  const orderMap: Record<string, MikroOrmQueryValue> = {};
 
   for (const entry of entries) {
     if (options?.columnMap && entry.field in options.columnMap) {

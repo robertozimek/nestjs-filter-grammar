@@ -3,7 +3,8 @@ import { parseFilter } from '../parse';
 import { validateFilter } from '../validate';
 import { getFilterableMetadata, getSortableMetadata, isFilterable } from '../decorators/metadata';
 import { FilterParseException } from '../errors/filter-parse-exception';
-import { FilterResult, ColumnMetadata, SortableColumnMetadata } from '../types';
+import { FilterResult, FilterTree, ColumnMetadata, SortableColumnMetadata } from '../types';
+import type { SortEntry } from '../types';
 import { buildSwaggerDescription, buildSortSwaggerDescription } from '../swagger/swagger.util';
 import { parseSortString } from '../sort/sort-parser';
 import { validateSort } from '../sort/sort-validator';
@@ -20,10 +21,10 @@ export interface FilterOptions {
  */
 function transformQuery(
   queryClass: Function,
-  rawQuery: Record<string, any>,
+  rawQuery: Record<string, string | string[] | undefined>,
   excludeKeys: Set<string>,
-): Record<string, any> {
-  const plain: Record<string, any> = {};
+): Record<string, string | string[] | undefined> {
+  const plain: Record<string, string | string[] | undefined> = {};
   for (const [key, value] of Object.entries(rawQuery)) {
     if (!excludeKeys.has(key)) {
       plain[key] = value;
@@ -54,14 +55,14 @@ function createFilterDecorator(queryClass: Function, options: FilterOptions = {}
   const isOptional = options.optional ?? false;
 
   return createParamDecorator(
-    (_data: unknown, ctx: ExecutionContext): FilterResult<any> => {
+    (_data: unknown, ctx: ExecutionContext): FilterResult<Record<string, string | string[] | undefined>> => {
       const request = ctx.switchToHttp().getRequest();
-      const queryParams = request.query ?? {};
-      const filterString: string | undefined = queryParams[paramName];
-      const sortString: string | undefined = queryParams[sortParamName];
+      const queryParams: Record<string, string | string[] | undefined> = request.query ?? {};
+      const filterString: string | undefined = queryParams[paramName] as string | undefined;
+      const sortString: string | undefined = queryParams[sortParamName] as string | undefined;
 
       // Handle filter
-      let filter: FilterResult<any>['filter'];
+      let filter: FilterTree | undefined;
       if (!filterString || filterString.trim() === '') {
         if (!isOptional) {
           throw new BadRequestException({
@@ -79,7 +80,7 @@ function createFilterDecorator(queryClass: Function, options: FilterOptions = {}
       }
 
       // Handle sort — only if the query class has @SortableColumn decorators
-      let sort: FilterResult<any>['sort'];
+      let sort: SortEntry[] | undefined;
       if (sortableMetadata.length > 0 && sortString && sortString.trim() !== '') {
         const sortEntries = parseSortString(sortString);
         const sortErrors = validateSort(sortEntries, sortableMetadata);

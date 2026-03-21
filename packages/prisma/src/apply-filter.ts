@@ -4,19 +4,19 @@ import type {
   FilterGroup,
 } from '@nestjs-filter-grammar/core';
 import { getPrismaOperator } from './operators';
-import type { ApplyFilterOptions, PrismaColumnMapFn } from './types';
+import type { ApplyFilterOptions, PrismaColumnMapFn, PrismaQueryValue } from './types';
 
 export function applyFilter(
   tree: FilterTree,
   options?: ApplyFilterOptions,
-): Record<string, any> {
+): Record<string, PrismaQueryValue> {
   return buildNode(tree, options?.columnMap);
 }
 
 function buildNode(
   node: FilterTree,
   columnMap?: ApplyFilterOptions['columnMap'],
-): Record<string, any> {
+): Record<string, PrismaQueryValue> {
   if ('field' in node) {
     return buildCondition(node, columnMap);
   }
@@ -26,7 +26,7 @@ function buildNode(
 function buildGroup(
   group: FilterGroup,
   columnMap?: ApplyFilterOptions['columnMap'],
-): Record<string, any> {
+): Record<string, PrismaQueryValue> {
   const children = group.conditions.map((c) => buildNode(c, columnMap));
   return { [group.type]: children };
 }
@@ -34,7 +34,7 @@ function buildGroup(
 function buildCondition(
   condition: FilterCondition,
   columnMap?: ApplyFilterOptions['columnMap'],
-): Record<string, any> {
+): Record<string, PrismaQueryValue> {
   // Check for column map callback
   if (columnMap && condition.field in columnMap) {
     const mapping = columnMap[condition.field];
@@ -80,7 +80,7 @@ function buildCondition(
 
   // Single value
   const rawValue = stringValues.length > 0 ? stringValues[0].value : null;
-  let fieldExpr: Record<string, any> = { [opMapping.key]: rawValue };
+  let fieldExpr: Record<string, PrismaQueryValue> = { [opMapping.key]: rawValue };
 
   if (opMapping.insensitive) {
     fieldExpr.mode = 'insensitive';

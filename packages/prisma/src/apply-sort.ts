@@ -1,10 +1,10 @@
 import type { SortEntry } from '@nestjs-filter-grammar/core';
-import type { ApplySortOptions, PrismaSortMapFn } from './types';
+import type { ApplySortOptions, PrismaQueryValue, PrismaSortMapFn } from './types';
 
 export function applySort(
   entries: SortEntry[],
   options?: ApplySortOptions,
-): Record<string, any>[] {
+): Record<string, PrismaQueryValue>[] {
   return entries.map((entry) => {
     const direction = entry.direction;
 

@@ -1,4 +1,4 @@
-import { CstNode } from 'chevrotain';
+import { CstNode, IToken } from 'chevrotain';
 import { FilterParser } from '../parser/filter-parser';
 import {
   FilterTree,
@@ -6,6 +6,40 @@ import {
   FilterValue,
   FilterOperator,
 } from '../types';
+
+/** CST node for `orExpression → andExpression (Pipe andExpression)*` */
+interface OrExpressionCstChildren {
+  andExpression: CstNode[];
+}
+
+/** CST node for `andExpression → condition (Semicolon condition)*` */
+interface AndExpressionCstChildren {
+  condition: CstNode[];
+}
+
+/** CST node for `condition → Token operator values` */
+interface ConditionCstChildren {
+  field: IToken[];
+  operator: CstNode[];
+  values: CstNode[];
+}
+
+/** CST node for `operator → GreaterEqual | LessEqual | ...` */
+interface OperatorCstChildren {
+  [tokenName: string]: IToken[] | undefined;
+}
+
+/** CST node for `values → value (Comma value)*` */
+interface ValuesCstChildren {
+  value: CstNode[];
+}
+
+/** CST node for `value → StringLiteral | NullLiteral | Token` */
+interface ValueCstChildren {
+  StringLiteral?: IToken[];
+  NullLiteral?: IToken[];
+  Token?: IToken[];
+}
 
 const OPERATOR_MAP: Record<string, FilterOperator> = {
   Equals: FilterOperator.eq,
@@ -47,21 +81,21 @@ export function buildFilterVisitor(parser: FilterParser) {
       this.validateVisitor();
     }
 
-    orExpression(ctx: any): FilterTree {
+    orExpression(ctx: OrExpressionCstChildren): FilterTree {
       const andNodes: FilterTree[] = ctx.andExpression.map((node: CstNode) =>
         this.visit(node),
       );
       return simplify('OR', andNodes);
     }
 
-    andExpression(ctx: any): FilterTree {
+    andExpression(ctx: AndExpressionCstChildren): FilterTree {
       const conditions: FilterTree[] = ctx.condition.map((node: CstNode) =>
         this.visit(node),
       );
       return simplify('AND', conditions);
     }
 
-    condition(ctx: any): FilterCondition {
+    condition(ctx: ConditionCstChildren): FilterCondition {
       const fieldToken = ctx.field[0];
       const field: string = fieldToken.image;
       const fieldOffset: number = fieldToken.startOffset;
@@ -71,20 +105,20 @@ export function buildFilterVisitor(parser: FilterParser) {
       return { field, operator, values, fieldOffset, operatorOffset };
     }
 
-    operator(ctx: any): { operator: FilterOperator; operatorOffset: number } {
+    operator(ctx: OperatorCstChildren): { operator: FilterOperator; operatorOffset: number } {
       for (const [tokenName, op] of Object.entries(OPERATOR_MAP)) {
         if (ctx[tokenName]) {
-          return { operator: op, operatorOffset: ctx[tokenName][0].startOffset };
+          return { operator: op, operatorOffset: ctx[tokenName]![0].startOffset };
         }
       }
       throw new Error('Unexpected operator in CST');
     }
 
-    values(ctx: any): FilterValue[] {
+    values(ctx: ValuesCstChildren): FilterValue[] {
       return ctx.value.map((node: CstNode) => this.visit(node));
     }
 
-    value(ctx: any): FilterValue {
+    value(ctx: ValueCstChildren): FilterValue {
       if (ctx.NullLiteral) {
         return { type: 'null' };
       }
@@ -93,7 +127,7 @@ export function buildFilterVisitor(parser: FilterParser) {
         return { type: 'string', value: unescapeString(raw) };
       }
       // Token (generic unquoted value)
-      return { type: 'string', value: ctx.Token[0].image };
+      return { type: 'string', value: ctx.Token![0].image };
     }
   }
 
