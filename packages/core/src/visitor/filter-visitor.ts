@@ -78,7 +78,7 @@ function simplify(type: 'AND' | 'OR', conditions: FilterTree[]): FilterTree {
   return { type, conditions };
 }
 
-export function buildFilterVisitor(parser: FilterParser) {
+export function buildFilterVisitor(parser: FilterParser): { visit(node: CstNode): FilterTree } {
   const BaseVisitor = parser.getBaseCstVisitorConstructor();
 
   class FilterCstVisitor extends BaseVisitor {
