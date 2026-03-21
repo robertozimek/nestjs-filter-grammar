@@ -3,8 +3,18 @@ import { methodNameForSymbol } from './serialize';
 
 const MULTI_VALUE_METHODS = new Set(['eq', 'neq', 'iEq', 'iNeq']);
 
-export function field<T>(name: string, operatorSymbols: string[]): Record<string, Function> {
-  const methods: Record<string, Function> = {};
+type ScalarValue = string | number | boolean | null;
+
+type FieldMethods<T extends ScalarValue> = Record<
+  string,
+  (...values: (T | null)[]) => Condition
+>;
+
+export function field<T extends ScalarValue>(
+  name: string,
+  operatorSymbols: string[],
+): FieldMethods<T> {
+  const methods: FieldMethods<T> = {} as FieldMethods<T>;
 
   for (const symbol of operatorSymbols) {
     const methodName = methodNameForSymbol(symbol);
@@ -12,10 +22,10 @@ export function field<T>(name: string, operatorSymbols: string[]): Record<string
 
     if (MULTI_VALUE_METHODS.has(methodName)) {
       methods[methodName] = (...values: (T | null)[]) =>
-        new Condition(name, symbol, values as (string | number | boolean | null)[]);
+        new Condition(name, symbol, values as ScalarValue[]);
     } else {
-      methods[methodName] = (value: T) =>
-        new Condition(name, symbol, [value as string | number | boolean | null]);
+      methods[methodName] = ((value: T) =>
+        new Condition(name, symbol, [value as ScalarValue])) as FieldMethods<T>[string];
     }
   }
 

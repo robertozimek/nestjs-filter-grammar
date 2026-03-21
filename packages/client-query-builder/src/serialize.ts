@@ -28,7 +28,7 @@ const OPERATOR_SYMBOLS: Record<string, string> = {
   iContains: '*~',
 };
 
-export function operatorSymbol(methodName: string): string {
+export function operatorSymbol(methodName: string): string | undefined {
   return OPERATOR_SYMBOLS[methodName];
 }
 
@@ -37,6 +37,6 @@ for (const [method, symbol] of Object.entries(OPERATOR_SYMBOLS)) {
   SYMBOL_TO_METHOD[symbol] = method;
 }
 
-export function methodNameForSymbol(symbol: string): string {
+export function methodNameForSymbol(symbol: string): string | undefined {
   return SYMBOL_TO_METHOD[symbol];
 }
