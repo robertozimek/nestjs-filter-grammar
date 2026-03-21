@@ -1,6 +1,6 @@
 {
   "name": "@nestjs-filter-grammar/core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Chevrotain-based filter DSL parser for NestJS with decorator-based column/operator declarations",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

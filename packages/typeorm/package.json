@@ -1,6 +1,6 @@
 {
   "name": "@nestjs-filter-grammar/typeorm",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "TypeORM adapter for @nestjs-filter-grammar — translates FilterTree into TypeORM query builder clauses",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
