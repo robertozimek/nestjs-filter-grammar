@@ -6,7 +6,7 @@ import { FilterOperator, ColumnMetadata, SortableColumnMetadata } from '../src/t
 describe('buildSwaggerDescription', () => {
   it('generates description for single column', () => {
     const metadata: ColumnMetadata[] = [
-      { propertyKey: 'id', operators: [FilterOperator.eq, FilterOperator.neq] },
+      { propertyKey: 'id', operators: [FilterOperator.eq, FilterOperator.neq], valueType: 'string' },
     ];
     const desc = buildSwaggerDescription(metadata);
     expect(desc).toContain('id: (=, !=)');
@@ -14,8 +14,8 @@ describe('buildSwaggerDescription', () => {
 
   it('generates description for multiple columns', () => {
     const metadata: ColumnMetadata[] = [
-      { propertyKey: 'id', operators: [FilterOperator.eq, FilterOperator.neq] },
-      { propertyKey: 'name', operators: [FilterOperator.eq, FilterOperator.iContains] },
+      { propertyKey: 'id', operators: [FilterOperator.eq, FilterOperator.neq], valueType: 'string' },
+      { propertyKey: 'name', operators: [FilterOperator.eq, FilterOperator.iContains], valueType: 'string' },
     ];
     const desc = buildSwaggerDescription(metadata);
     expect(desc).toContain('id: (=, !=)');
@@ -24,7 +24,7 @@ describe('buildSwaggerDescription', () => {
 
   it('includes syntax guide', () => {
     const metadata: ColumnMetadata[] = [
-      { propertyKey: 'id', operators: [FilterOperator.eq] },
+      { propertyKey: 'id', operators: [FilterOperator.eq], valueType: 'string' },
     ];
     const desc = buildSwaggerDescription(metadata);
     expect(desc).toContain('AND:');
