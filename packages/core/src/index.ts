@@ -10,6 +10,9 @@ export {
   FilterError,
   FilterAdapter,
   ColumnMetadata,
+  SortDirection,
+  SortEntry,
+  SortableColumnMetadata,
 } from './types';
 
 // Parser
@@ -21,7 +24,7 @@ export { validateFilter } from './validate';
 // Decorators
 export { Filterable } from './decorators/filterable.decorator';
 export { FilterableColumn } from './decorators/filterable-column.decorator';
-export { getFilterableMetadata, isFilterable } from './decorators/metadata';
+export { getFilterableMetadata, getSortableMetadata, isFilterable } from './decorators/metadata';
 
 // Parameter decorator
 export { Filter, FilterOptions } from './param/filter.decorator';
@@ -31,3 +34,9 @@ export { FilterParseException } from './errors/filter-parse-exception';
 
 // Swagger
 export { buildSwaggerDescription } from './swagger/swagger.util';
+
+// Sort
+export { parseSortString } from './sort/sort-parser';
+export { validateSort } from './sort/sort-validator';
+export { SortableColumn } from './decorators/sortable-column.decorator';
+export { buildSortSwaggerDescription } from './swagger/swagger.util';
