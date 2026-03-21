@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { parseFilter } from '../src/parse';
 import { FilterOperator, FilterCondition, FilterGroup } from '../src/types';
+import { FilterParseException } from '../src/errors/filter-parse-exception';
 
 describe('parseFilter', () => {
   it('parses a simple condition', () => {
@@ -48,11 +49,13 @@ describe('parseFilter', () => {
     try {
       parseFilter('=value');
       expect.fail('Should have thrown');
-    } catch (e: any) {
-      expect(e.errors).toBeDefined();
-      expect(e.errors.length).toBeGreaterThan(0);
-      expect(e.errors[0]).toHaveProperty('offset');
-      expect(e.errors[0]).toHaveProperty('message');
+    } catch (e) {
+      expect(e).toBeInstanceOf(FilterParseException);
+      const ex = e as FilterParseException;
+      expect(ex.errors).toBeDefined();
+      expect(ex.errors.length).toBeGreaterThan(0);
+      expect(ex.errors[0]).toHaveProperty('offset');
+      expect(ex.errors[0]).toHaveProperty('message');
     }
   });
 });

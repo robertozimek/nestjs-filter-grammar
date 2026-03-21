@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { FilterOperator, FilterCondition, FilterGroup } from '@nestjs-filter-grammar/core';
 import { applyFilter } from '../src/apply-filter';
+import type { PrismaQueryValue } from '../src/types';
 
 describe('applyFilter (Prisma)', () => {
   it('produces equals where', () => {
@@ -160,7 +161,8 @@ describe('applyFilter (Prisma)', () => {
     };
     const where = applyFilter(tree);
     expect(where).toHaveProperty('OR');
-    expect((where as any).OR).toHaveLength(2);
-    expect((where as any).OR[0]).toHaveProperty('AND');
+    const orClauses = (where as Record<string, PrismaQueryValue>).OR as PrismaQueryValue[];
+    expect(orClauses).toHaveLength(2);
+    expect(orClauses[0]).toHaveProperty('AND');
   });
 });
