@@ -1,12 +1,12 @@
-import type { SelectQueryBuilder } from 'typeorm';
+import type { ObjectLiteral, SelectQueryBuilder } from 'typeorm';
 import type { SortEntry } from '@nestjs-filter-grammar/core';
 import type { ApplySortOptions, TypeOrmSortMapFn } from './types';
 
-export function applySort(
-  qb: SelectQueryBuilder<any>,
+export function applySort<T extends ObjectLiteral>(
+  qb: SelectQueryBuilder<T>,
   entries: SortEntry[],
   options?: ApplySortOptions,
-): SelectQueryBuilder<any> {
+): SelectQueryBuilder<T> {
   for (let i = 0; i < entries.length; i++) {
     const entry = entries[i];
     const sqlDirection = entry.direction === 'asc' ? 'ASC' : 'DESC';

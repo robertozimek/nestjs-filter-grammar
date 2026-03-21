@@ -1,5 +1,5 @@
 import { Brackets } from 'typeorm';
-import type { SelectQueryBuilder, WhereExpressionBuilder } from 'typeorm';
+import type { ObjectLiteral, SelectQueryBuilder, WhereExpressionBuilder } from 'typeorm';
 import type {
   FilterTree,
   FilterCondition,
@@ -18,11 +18,11 @@ function uniqueParam(field: string, counter: ParamCounter): string {
   return `filter_${field}_${counter.value++}`;
 }
 
-export function applyFilter(
-  qb: SelectQueryBuilder<any>,
+export function applyFilter<T extends ObjectLiteral>(
+  qb: SelectQueryBuilder<T>,
   tree: FilterTree,
   options?: ApplyFilterOptions,
-): SelectQueryBuilder<any> {
+): SelectQueryBuilder<T> {
   const counter: ParamCounter = { value: 0 };
   applyNode(qb, tree, 'and', options?.columnMap, counter);
   return qb;
