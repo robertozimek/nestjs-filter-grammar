@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { describe, it, expect } from 'vitest';
-import { buildSwaggerDescription } from '../src/swagger/swagger.util';
-import { FilterOperator, ColumnMetadata } from '../src/types';
+import { buildSwaggerDescription, buildSortSwaggerDescription } from '../src/swagger/swagger.util';
+import { FilterOperator, ColumnMetadata, SortableColumnMetadata } from '../src/types';
 
 describe('buildSwaggerDescription', () => {
   it('generates description for single column', () => {
@@ -35,6 +35,25 @@ describe('buildSwaggerDescription', () => {
 
   it('returns empty string for no columns', () => {
     const desc = buildSwaggerDescription([]);
+    expect(desc).toBe('');
+  });
+});
+
+describe('buildSortSwaggerDescription', () => {
+  it('generates description for sortable columns', () => {
+    const metadata: SortableColumnMetadata[] = [
+      { propertyKey: 'name' },
+      { propertyKey: 'createdAt' },
+    ];
+    const desc = buildSortSwaggerDescription(metadata);
+    expect(desc).toContain('name');
+    expect(desc).toContain('createdAt');
+    expect(desc).toContain('+field');
+    expect(desc).toContain('-field');
+  });
+
+  it('returns empty string for no sortable columns', () => {
+    const desc = buildSortSwaggerDescription([]);
     expect(desc).toBe('');
   });
 });
