@@ -1,7 +1,17 @@
 import { FilterOperator } from '@nestjs-filter-grammar/core';
 
+export type MikroOrmOperatorKey =
+  | '$eq'
+  | '$ne'
+  | '$gt'
+  | '$lt'
+  | '$gte'
+  | '$lte'
+  | '$like'
+  | '$ilike';
+
 export interface MikroOrmOperatorMapping {
-  key: string;
+  key: MikroOrmOperatorKey;
   like?: 'starts' | 'ends' | 'contains';
   caseInsensitive?: boolean;
   negate?: boolean;
