@@ -1,5 +1,5 @@
 import type { SortEntry } from '@nestjs-filter-grammar/core';
-import type { ApplySortOptions, MikroOrmQueryValue, MikroOrmSortMapFn } from './types';
+import type { ApplySortOptions, MikroOrmQueryValue } from './types';
 
 export function applySort(
   entries: SortEntry[],
@@ -11,10 +11,12 @@ export function applySort(
     if (options?.columnMap && entry.field in options.columnMap) {
       const mapping = options.columnMap[entry.field];
       if (typeof mapping === 'function') {
-        Object.assign(orderMap, (mapping as MikroOrmSortMapFn)(entry.direction));
+        Object.assign(orderMap, mapping(entry.direction));
         continue;
       }
-      orderMap[mapping as string] = entry.direction;
+      if (typeof mapping === 'string') {
+        orderMap[mapping] = entry.direction;
+      }
       continue;
     }
 

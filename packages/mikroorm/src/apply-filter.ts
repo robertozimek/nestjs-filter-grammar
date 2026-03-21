@@ -4,7 +4,7 @@ import type {
   FilterGroup,
 } from '@nestjs-filter-grammar/core';
 import { getMikroOrmOperator, wrapLikeValue } from './operators';
-import type { ApplyFilterOptions, MikroOrmColumnMapFn, MikroOrmQueryValue } from './types';
+import type { ApplyFilterOptions, MikroOrmQueryValue } from './types';
 
 export function applyFilter(
   tree: FilterTree,
@@ -40,14 +40,13 @@ function buildCondition(
   if (columnMap && condition.field in columnMap) {
     const mapping = columnMap[condition.field];
     if (typeof mapping === 'function') {
-      return (mapping as MikroOrmColumnMapFn)(condition.operator, condition.values);
+      return mapping(condition.operator, condition.values);
     }
   }
 
   // Resolve column name
-  const column = (columnMap && typeof columnMap[condition.field] === 'string')
-    ? columnMap[condition.field] as string
-    : condition.field;
+  const mappedColumn = columnMap?.[condition.field];
+  const column = typeof mappedColumn === 'string' ? mappedColumn : condition.field;
 
   const { values, operator } = condition;
   const opMapping = getMikroOrmOperator(operator);

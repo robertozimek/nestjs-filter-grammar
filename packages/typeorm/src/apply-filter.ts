@@ -8,7 +8,7 @@ import type {
 } from '@nestjs-filter-grammar/core';
 import { FilterOperator } from '@nestjs-filter-grammar/core';
 import { getOperatorSql, wrapLikeValue } from './operators';
-import type { ApplyFilterOptions, TypeOrmColumnMapFn } from './types';
+import type { ApplyFilterOptions } from './types';
 
 interface ParamCounter {
   value: number;
@@ -76,15 +76,14 @@ function applyCondition(
   if (columnMap && condition.field in columnMap) {
     const mapping = columnMap[condition.field];
     if (typeof mapping === 'function') {
-      (mapping as TypeOrmColumnMapFn)(qb as SelectQueryBuilder<ObjectLiteral>, condition.operator, condition.values);
+      mapping(qb as SelectQueryBuilder<ObjectLiteral>, condition.operator, condition.values);
       return;
     }
   }
 
   // Resolve column name
-  const column = (columnMap && typeof columnMap[condition.field] === 'string')
-    ? columnMap[condition.field] as string
-    : `entity.${condition.field}`;
+  const mappedColumn = columnMap?.[condition.field];
+  const column = typeof mappedColumn === 'string' ? mappedColumn : `entity.${condition.field}`;
 
   const { values, operator } = condition;
   const opSql = getOperatorSql(operator);

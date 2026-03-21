@@ -1,5 +1,5 @@
 import type { SortEntry } from '@nestjs-filter-grammar/core';
-import type { ApplySortOptions, PrismaQueryValue, PrismaSortMapFn } from './types';
+import type { ApplySortOptions, PrismaQueryValue } from './types';
 
 export function applySort(
   entries: SortEntry[],
@@ -11,9 +11,11 @@ export function applySort(
     if (options?.columnMap && entry.field in options.columnMap) {
       const mapping = options.columnMap[entry.field];
       if (typeof mapping === 'function') {
-        return (mapping as PrismaSortMapFn)(direction);
+        return mapping(direction);
       }
-      return { [mapping as string]: direction };
+      if (typeof mapping === 'string') {
+        return { [mapping]: direction };
+      }
     }
 
     return { [entry.field]: direction };
