@@ -2,6 +2,28 @@
   "name": "@nestjs-filter-grammar/typeorm",
   "version": "0.1.2",
   "description": "TypeORM adapter for @nestjs-filter-grammar — translates FilterTree into TypeORM query builder clauses",
+  "license": "MIT",
+  "keywords": [
+    "nestjs",
+    "filter",
+    "typeorm",
+    "adapter",
+    "query",
+    "filtering",
+    "sorting",
+    "orm",
+    "rest-api",
+    "api-filter"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/robertozimek/nestjs-filter-grammar.git",
+    "directory": "packages/typeorm"
+  },
+  "homepage": "https://github.com/robertozimek/nestjs-filter-grammar#readme",
+  "bugs": {
+    "url": "https://github.com/robertozimek/nestjs-filter-grammar/issues"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
