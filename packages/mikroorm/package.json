@@ -2,6 +2,29 @@
   "name": "@nestjs-filter-grammar/mikroorm",
   "version": "0.1.2",
   "description": "MikroORM adapter for @nestjs-filter-grammar — translates FilterTree into MikroORM FilterQuery objects",
+  "license": "MIT",
+  "keywords": [
+    "nestjs",
+    "filter",
+    "mikroorm",
+    "mikro-orm",
+    "adapter",
+    "query",
+    "filtering",
+    "sorting",
+    "orm",
+    "rest-api",
+    "api-filter"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/robertozimek/nestjs-filter-grammar.git",
+    "directory": "packages/mikroorm"
+  },
+  "homepage": "https://github.com/robertozimek/nestjs-filter-grammar#readme",
+  "bugs": {
+    "url": "https://github.com/robertozimek/nestjs-filter-grammar/issues"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
