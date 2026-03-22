@@ -1,6 +1,6 @@
 # @nestjs-filter-grammar/client-query-builder
 
-Type-safe client-side filter and sort query builder for APIs using `@nestjs-filter-grammar`. Generates typed filter/sort objects from your API's OpenAPI spec.
+Type-safe frontend query builder for `@nestjs-filter-grammar` — build filter and sort query strings for REST APIs, designed to work alongside OpenAPI-generated clients. Generates typed filter/sort builders from your API's OpenAPI spec so your frontend stays in sync with your backend's filter grammar.
 
 ## Installation
 
