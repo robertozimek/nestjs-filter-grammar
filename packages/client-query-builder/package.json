@@ -1,7 +1,33 @@
 {
   "name": "@nestjs-filter-grammar/client-query-builder",
   "version": "0.1.2",
-  "description": "Type-safe client-side filter/sort query builder with OpenAPI codegen for @nestjs-filter-grammar",
+  "description": "Type-safe frontend query builder for @nestjs-filter-grammar — build filter and sort query strings for REST APIs, designed to work alongside OpenAPI-generated clients",
+  "license": "MIT",
+  "keywords": [
+    "nestjs",
+    "filter",
+    "query-builder",
+    "frontend",
+    "client",
+    "openapi",
+    "rest-api",
+    "sorting",
+    "filtering",
+    "type-safe",
+    "codegen",
+    "swagger",
+    "api-client",
+    "query-string"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/robertozimek/nestjs-filter-grammar.git",
+    "directory": "packages/client-query-builder"
+  },
+  "homepage": "https://github.com/robertozimek/nestjs-filter-grammar#readme",
+  "bugs": {
+    "url": "https://github.com/robertozimek/nestjs-filter-grammar/issues"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
