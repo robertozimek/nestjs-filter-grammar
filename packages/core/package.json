@@ -2,6 +2,30 @@
   "name": "@nestjs-filter-grammar/core",
   "version": "0.1.2",
   "description": "Chevrotain-based filter DSL parser for NestJS with decorator-based column/operator declarations",
+  "license": "MIT",
+  "keywords": [
+    "nestjs",
+    "filter",
+    "grammar",
+    "parser",
+    "dsl",
+    "chevrotain",
+    "query",
+    "filtering",
+    "sorting",
+    "decorator",
+    "rest-api",
+    "api-filter"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/robertozimek/nestjs-filter-grammar.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/robertozimek/nestjs-filter-grammar#readme",
+  "bugs": {
+    "url": "https://github.com/robertozimek/nestjs-filter-grammar/issues"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
