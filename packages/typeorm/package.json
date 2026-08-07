@@ -41,7 +41,7 @@
   "devDependencies": {
     "reflect-metadata": "^0.2.2",
     "sql.js": "^1.11.0",
-    "typeorm": "^0.3.0"
+    "typeorm": "^0.3.31"
   },
   "files": [
     "dist"
