@@ -27,6 +27,6 @@
     "sql.js": "^1.11.0",
     "@mikro-orm/core": "6.6.14",
     "@mikro-orm/better-sqlite": "6.6.14",
-    "better-sqlite3": "^11.0.0"
+    "better-sqlite3": "^13.2.0"
   }
 }
