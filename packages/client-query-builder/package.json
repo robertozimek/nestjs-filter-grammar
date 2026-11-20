@@ -1,6 +1,6 @@
 {
   "name": "@nestjs-filter-grammar/client-query-builder",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Type-safe frontend query builder for @nestjs-filter-grammar — build filter and sort query strings for REST APIs, designed to work alongside OpenAPI-generated clients",
   "license": "MIT",
   "keywords": [
@@ -44,7 +44,6 @@
     "js-yaml": "^5.4.1"
   },
   "devDependencies": {
-    "@types/js-yaml": "^4.0.0",
     "@types/node": "^20.19.37"
   },
   "files": [

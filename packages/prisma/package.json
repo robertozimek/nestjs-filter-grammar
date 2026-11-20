@@ -1,6 +1,6 @@
 {
   "name": "@nestjs-filter-grammar/prisma",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Prisma adapter for @nestjs-filter-grammar — translates FilterTree into Prisma where/orderBy objects",
   "license": "MIT",
   "keywords": [
