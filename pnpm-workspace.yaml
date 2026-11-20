@@ -1,8 +1,2 @@
 packages:
   - 'packages/*'
-
-overrides:
-  better-sqlite3: ^13.2.0
-
-allowBuilds:
-  better-sqlite3: true
