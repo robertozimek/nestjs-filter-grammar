@@ -1,0 +1,69 @@
+diff --git a/src/better_sqlite3.cpp b/src/better_sqlite3.cpp
+index 8fe2c68288103fae5872eed439d18386e40b925e..62dce3e66b9d4f9fd577d244cbdec0d1bbbb9254 100644
+--- a/src/better_sqlite3.cpp
++++ b/src/better_sqlite3.cpp
+@@ -2,6 +2,14 @@
+ //
+ 
+ #include "better_sqlite3.hpp"
++// V8 14 (Node 26) removed Object::GetPrototype and PropertyCallbackInfo::This.
++#if V8_MAJOR_VERSION >= 14
++#define BS3_GET_PROTOTYPE(obj) (obj)->GetPrototypeV2()
++#define BS3_ACCESSOR_THIS(info) (info).HolderV2()
++#else
++#define BS3_GET_PROTOTYPE(obj) (obj)->GetPrototype()
++#define BS3_ACCESSOR_THIS(info) (info).This()
++#endif
+ #line 154 "./src/util/macros.lzz"
+ void SetPrototypeGetter(
+ 	v8::Isolate* isolate,
+@@ -43,7 +51,7 @@ static inline v8::MaybeLocal<v8::Object> BufferSandboxNew(v8::Isolate* isolate,
+ #endif
+ #line 39 "./src/util/binder.lzz"
+ 	static bool IsPlainObject(v8::Isolate* isolate, v8::Local<v8::Object> obj) {
+-		v8::Local<v8::Value> proto = obj->GetPrototype();
++		v8::Local<v8::Value> proto = BS3_GET_PROTOTYPE(obj);
+ 
+ 		#if defined NODE_MODULE_VERSION && NODE_MODULE_VERSION < 93
+ 		v8::Local<v8::Context> ctx = obj->CreationContext();
+@@ -52,13 +60,13 @@ static inline v8::MaybeLocal<v8::Object> BufferSandboxNew(v8::Isolate* isolate,
+ 		#endif
+ 
+ 		ctx->Enter();
+-		v8::Local<v8::Value> baseProto = v8::Object::New(isolate)->GetPrototype();
++		v8::Local<v8::Value> baseProto = BS3_GET_PROTOTYPE(v8::Object::New(isolate));
+ 		ctx->Exit();
+ 		return proto->StrictEquals(baseProto) || proto->StrictEquals(v8::Null(isolate));
+ 	}
+ #line 67 "./src/better_sqlite3.lzz"
+ NODE_MODULE_INIT(/* exports, context */) {
+-	v8::Isolate* isolate = context->GetIsolate();
++	v8::Isolate* isolate = v8::Isolate::GetCurrent();
+ 	v8::HandleScope scope(isolate);
+ 
+ 	// Initialize addon instance.
+@@ -758,13 +766,13 @@ void Database::JS_unsafeMode (v8::FunctionCallbackInfo <v8 :: Value> const & inf
+ void Database::JS_open (v8::Local <v8 :: Name> _, v8::PropertyCallbackInfo <v8 :: Value> const & info)
+ #line 415 "./src/objects/database.lzz"
+                              {
+-                info.GetReturnValue().Set( node :: ObjectWrap :: Unwrap <Database>(info.This())->open);
++                info.GetReturnValue().Set( node :: ObjectWrap :: Unwrap <Database>(BS3_ACCESSOR_THIS(info))->open);
+ }
+ #line 419 "./src/objects/database.lzz"
+ void Database::JS_inTransaction (v8::Local <v8 :: Name> _, v8::PropertyCallbackInfo <v8 :: Value> const & info)
+ #line 419 "./src/objects/database.lzz"
+                                       {
+-                Database* db = node :: ObjectWrap :: Unwrap <Database>(info.This());
++                Database* db = node :: ObjectWrap :: Unwrap <Database>(BS3_ACCESSOR_THIS(info));
+                 info.GetReturnValue().Set(db->open && !static_cast<bool>(sqlite3_get_autocommit(db->db_handle)));
+ }
+ #line 424 "./src/objects/database.lzz"
+@@ -1133,7 +1141,7 @@ void Statement::JS_columns (v8::FunctionCallbackInfo <v8 :: Value> const & info)
+ void Statement::JS_busy (v8::Local <v8 :: Name> _, v8::PropertyCallbackInfo <v8 :: Value> const & info)
+ #line 321 "./src/objects/statement.lzz"
+                              {
+-                Statement* stmt = node :: ObjectWrap :: Unwrap <Statement>(info.This());
++                Statement* stmt = node :: ObjectWrap :: Unwrap <Statement>(BS3_ACCESSOR_THIS(info));
+                 info.GetReturnValue().Set(stmt->alive && stmt->locked);
+ }
+ #line 4 "./src/objects/statement-iterator.lzz"
